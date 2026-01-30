@@ -1,0 +1,9 @@
+{
+  "type": "record",
+  "name": "SendOTP",
+  "namespace": "auth.events",
+  "fields": [
+    {"name": "email", "type": "string"},
+    {"name": "otp", "type": "string"}
+  ]
+}
