@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 
@@ -12,11 +13,13 @@ import (
 )
 
 func main() {
-	handler := di.BuildAuthHandler()
+	app := di.BuildApp()
+
+	go app.Worker.Start(context.Background())
 
 	mux := http.NewServeMux()
 
-	path, h := authv1connect.NewAuthServiceHandler(handler)
+	path, h := authv1connect.NewAuthServiceHandler(app.Handler)
 	log.Println("Registered Connect path:", path)
 	mux.Handle(path, h)
 

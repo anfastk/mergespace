@@ -7,5 +7,6 @@ import (
 )
 
 type EventProducer interface {
-	PublishSendOTP(ctx context.Context, event event.SendOTP) error
+	PublishSendOTP(ctx context.Context, event *event.SendOTP) error
+	PublishUserCreated(ctx context.Context, event *event.UserCreated) error
 }

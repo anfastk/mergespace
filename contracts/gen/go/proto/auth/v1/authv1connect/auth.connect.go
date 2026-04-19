@@ -36,11 +36,15 @@ const (
 	// AuthServiceInitiateSignupProcedure is the fully-qualified name of the AuthService's
 	// InitiateSignup RPC.
 	AuthServiceInitiateSignupProcedure = "/auth.v1.AuthService/InitiateSignup"
+	// AuthServiceCheckUsernameAvailabilityProcedure is the fully-qualified name of the AuthService's
+	// CheckUsernameAvailability RPC.
+	AuthServiceCheckUsernameAvailabilityProcedure = "/auth.v1.AuthService/CheckUsernameAvailability"
 )
 
 // AuthServiceClient is a client for the auth.v1.AuthService service.
 type AuthServiceClient interface {
 	InitiateSignup(context.Context, *connect.Request[v1.InitiateSignupRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
+	CheckUsernameAvailability(context.Context, *connect.Request[v1.CheckUsernameRequest]) (*connect.Response[v1.CheckUsernameResponse], error)
 }
 
 // NewAuthServiceClient constructs a client for the auth.v1.AuthService service. By default, it uses
@@ -60,12 +64,19 @@ func NewAuthServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(authServiceMethods.ByName("InitiateSignup")),
 			connect.WithClientOptions(opts...),
 		),
+		checkUsernameAvailability: connect.NewClient[v1.CheckUsernameRequest, v1.CheckUsernameResponse](
+			httpClient,
+			baseURL+AuthServiceCheckUsernameAvailabilityProcedure,
+			connect.WithSchema(authServiceMethods.ByName("CheckUsernameAvailability")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // authServiceClient implements AuthServiceClient.
 type authServiceClient struct {
-	initiateSignup *connect.Client[v1.InitiateSignupRequest, v1.InitiateSignupResponse]
+	initiateSignup            *connect.Client[v1.InitiateSignupRequest, v1.InitiateSignupResponse]
+	checkUsernameAvailability *connect.Client[v1.CheckUsernameRequest, v1.CheckUsernameResponse]
 }
 
 // InitiateSignup calls auth.v1.AuthService.InitiateSignup.
@@ -73,9 +84,15 @@ func (c *authServiceClient) InitiateSignup(ctx context.Context, req *connect.Req
 	return c.initiateSignup.CallUnary(ctx, req)
 }
 
+// CheckUsernameAvailability calls auth.v1.AuthService.CheckUsernameAvailability.
+func (c *authServiceClient) CheckUsernameAvailability(ctx context.Context, req *connect.Request[v1.CheckUsernameRequest]) (*connect.Response[v1.CheckUsernameResponse], error) {
+	return c.checkUsernameAvailability.CallUnary(ctx, req)
+}
+
 // AuthServiceHandler is an implementation of the auth.v1.AuthService service.
 type AuthServiceHandler interface {
 	InitiateSignup(context.Context, *connect.Request[v1.InitiateSignupRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
+	CheckUsernameAvailability(context.Context, *connect.Request[v1.CheckUsernameRequest]) (*connect.Response[v1.CheckUsernameResponse], error)
 }
 
 // NewAuthServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -91,10 +108,18 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(authServiceMethods.ByName("InitiateSignup")),
 		connect.WithHandlerOptions(opts...),
 	)
+	authServiceCheckUsernameAvailabilityHandler := connect.NewUnaryHandler(
+		AuthServiceCheckUsernameAvailabilityProcedure,
+		svc.CheckUsernameAvailability,
+		connect.WithSchema(authServiceMethods.ByName("CheckUsernameAvailability")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/auth.v1.AuthService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AuthServiceInitiateSignupProcedure:
 			authServiceInitiateSignupHandler.ServeHTTP(w, r)
+		case AuthServiceCheckUsernameAvailabilityProcedure:
+			authServiceCheckUsernameAvailabilityHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -106,4 +131,8 @@ type UnimplementedAuthServiceHandler struct{}
 
 func (UnimplementedAuthServiceHandler) InitiateSignup(context.Context, *connect.Request[v1.InitiateSignupRequest]) (*connect.Response[v1.InitiateSignupResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.InitiateSignup is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) CheckUsernameAvailability(context.Context, *connect.Request[v1.CheckUsernameRequest]) (*connect.Response[v1.CheckUsernameResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.CheckUsernameAvailability is not implemented"))
 }

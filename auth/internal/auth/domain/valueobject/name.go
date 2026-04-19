@@ -13,7 +13,7 @@ type Name struct {
 	value string
 }
 
-func 	NewName(raw string) (Name, error) {
+func NewName(raw string) (Name, error) {
 	raw = strings.TrimSpace(raw)
 
 	if len(raw) < 1 {

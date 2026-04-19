@@ -32,7 +32,6 @@ func NewPassword(v string, forbidden ...string) (Password, error) {
 		hasLower  bool
 		hasDigit  bool
 		hasSymbol bool
-
 		repeatCount int
 		lastRune    rune
 	)

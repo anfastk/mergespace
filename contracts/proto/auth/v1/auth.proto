@@ -2,8 +2,6 @@ syntax = "proto3";
 
 package auth.v1;
 
-import "google/api/annotations.proto";
-
 option go_package = "github.com/anfastk/mergespace/contracts/gen/go/proto/auth/v1;authv1";
 
 message InitiateSignupRequest {
@@ -11,17 +9,25 @@ message InitiateSignupRequest {
   string last_name = 2;
   string email = 3;
   string password = 4;
+  string username = 5;
 }
 
 message InitiateSignupResponse {
   string message = 1;
   string temp_id = 2; }
 
+message CheckUsernameRequest {
+  string username = 1;
+}
+
+message CheckUsernameResponse {
+  bool available = 1;
+  string message = 2;
+  repeated string suggestions = 3;
+}
+
 service AuthService {
-  rpc InitiateSignup(InitiateSignupRequest) returns (InitiateSignupResponse){
-    option (google.api.http) = {
-    post: "/api/v1/auth/signup"
-    body: "*"
-    };
-  }
+  rpc InitiateSignup(InitiateSignupRequest) returns (InitiateSignupResponse);
+
+  rpc CheckUsernameAvailability(CheckUsernameRequest) returns (CheckUsernameResponse);
 }
