@@ -1,15 +1,20 @@
 package valueobject
 
-import "github.com/google/uuid"
+import (
+	"errors"
+)
 
 type UserID struct {
-	value uuid.UUID
+	value string
 }
 
-func NewUserID() UserID {
-	return UserID{value: uuid.New()}
+func NewUserID(value string) (UserID, error) {
+	if value == "" {
+		return UserID{}, errors.New("empty id")
+	}
+	return UserID{value: value}, nil
 }
 
-func (id UserID) String() uuid.UUID {
+func (id UserID) String() string {
 	return id.value
 }

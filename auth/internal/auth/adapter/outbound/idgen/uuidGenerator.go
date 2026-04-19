@@ -16,5 +16,5 @@ func NewUUIDGenerator() outbound.IDGenerator {
 }
 
 func (g *UUIDGenerator) NewID(ctx context.Context) string {
-	return uuid.NewString()
+	return uuid.Must(uuid.NewV7()).String()
 }

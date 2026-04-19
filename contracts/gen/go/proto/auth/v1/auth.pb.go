@@ -7,7 +7,6 @@
 package authv1
 
 import (
-	_ "google.golang.org/genproto/googleapis/api/annotations"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -28,6 +27,7 @@ type InitiateSignupRequest struct {
 	LastName      string                 `protobuf:"bytes,2,opt,name=last_name,json=lastName,proto3" json:"last_name,omitempty"`
 	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
 	Password      string                 `protobuf:"bytes,4,opt,name=password,proto3" json:"password,omitempty"`
+	Username      string                 `protobuf:"bytes,5,opt,name=username,proto3" json:"username,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -90,6 +90,13 @@ func (x *InitiateSignupRequest) GetPassword() string {
 	return ""
 }
 
+func (x *InitiateSignupRequest) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
 type InitiateSignupResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
@@ -142,22 +149,134 @@ func (x *InitiateSignupResponse) GetTempId() string {
 	return ""
 }
 
+type CheckUsernameRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Username      string                 `protobuf:"bytes,1,opt,name=username,proto3" json:"username,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckUsernameRequest) Reset() {
+	*x = CheckUsernameRequest{}
+	mi := &file_proto_auth_v1_auth_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckUsernameRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckUsernameRequest) ProtoMessage() {}
+
+func (x *CheckUsernameRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_v1_auth_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckUsernameRequest.ProtoReflect.Descriptor instead.
+func (*CheckUsernameRequest) Descriptor() ([]byte, []int) {
+	return file_proto_auth_v1_auth_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *CheckUsernameRequest) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+type CheckUsernameResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Available     bool                   `protobuf:"varint,1,opt,name=available,proto3" json:"available,omitempty"`
+	Message       string                 `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+	Suggestions   []string               `protobuf:"bytes,3,rep,name=suggestions,proto3" json:"suggestions,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *CheckUsernameResponse) Reset() {
+	*x = CheckUsernameResponse{}
+	mi := &file_proto_auth_v1_auth_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *CheckUsernameResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*CheckUsernameResponse) ProtoMessage() {}
+
+func (x *CheckUsernameResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_v1_auth_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use CheckUsernameResponse.ProtoReflect.Descriptor instead.
+func (*CheckUsernameResponse) Descriptor() ([]byte, []int) {
+	return file_proto_auth_v1_auth_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *CheckUsernameResponse) GetAvailable() bool {
+	if x != nil {
+		return x.Available
+	}
+	return false
+}
+
+func (x *CheckUsernameResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+func (x *CheckUsernameResponse) GetSuggestions() []string {
+	if x != nil {
+		return x.Suggestions
+	}
+	return nil
+}
+
 var File_proto_auth_v1_auth_proto protoreflect.FileDescriptor
 
 const file_proto_auth_v1_auth_proto_rawDesc = "" +
 	"\n" +
-	"\x18proto/auth/v1/auth.proto\x12\aauth.v1\x1a\x1cgoogle/api/annotations.proto\"\x85\x01\n" +
+	"\x18proto/auth/v1/auth.proto\x12\aauth.v1\"\xa1\x01\n" +
 	"\x15InitiateSignupRequest\x12\x1d\n" +
 	"\n" +
 	"first_name\x18\x01 \x01(\tR\tfirstName\x12\x1b\n" +
 	"\tlast_name\x18\x02 \x01(\tR\blastName\x12\x14\n" +
 	"\x05email\x18\x03 \x01(\tR\x05email\x12\x1a\n" +
-	"\bpassword\x18\x04 \x01(\tR\bpassword\"K\n" +
+	"\bpassword\x18\x04 \x01(\tR\bpassword\x12\x1a\n" +
+	"\busername\x18\x05 \x01(\tR\busername\"K\n" +
 	"\x16InitiateSignupResponse\x12\x18\n" +
 	"\amessage\x18\x01 \x01(\tR\amessage\x12\x17\n" +
-	"\atemp_id\x18\x02 \x01(\tR\x06tempId2\x80\x01\n" +
-	"\vAuthService\x12q\n" +
-	"\x0eInitiateSignup\x12\x1e.auth.v1.InitiateSignupRequest\x1a\x1f.auth.v1.InitiateSignupResponse\"\x1e\x82\xd3\xe4\x93\x02\x18:\x01*\"\x13/api/v1/auth/signupBEZCgithub.com/anfastk/mergespace/contracts/gen/go/proto/auth/v1;authv1b\x06proto3"
+	"\atemp_id\x18\x02 \x01(\tR\x06tempId\"2\n" +
+	"\x14CheckUsernameRequest\x12\x1a\n" +
+	"\busername\x18\x01 \x01(\tR\busername\"q\n" +
+	"\x15CheckUsernameResponse\x12\x1c\n" +
+	"\tavailable\x18\x01 \x01(\bR\tavailable\x12\x18\n" +
+	"\amessage\x18\x02 \x01(\tR\amessage\x12 \n" +
+	"\vsuggestions\x18\x03 \x03(\tR\vsuggestions2\xbc\x01\n" +
+	"\vAuthService\x12Q\n" +
+	"\x0eInitiateSignup\x12\x1e.auth.v1.InitiateSignupRequest\x1a\x1f.auth.v1.InitiateSignupResponse\x12Z\n" +
+	"\x19CheckUsernameAvailability\x12\x1d.auth.v1.CheckUsernameRequest\x1a\x1e.auth.v1.CheckUsernameResponseBEZCgithub.com/anfastk/mergespace/contracts/gen/go/proto/auth/v1;authv1b\x06proto3"
 
 var (
 	file_proto_auth_v1_auth_proto_rawDescOnce sync.Once
@@ -171,16 +290,20 @@ func file_proto_auth_v1_auth_proto_rawDescGZIP() []byte {
 	return file_proto_auth_v1_auth_proto_rawDescData
 }
 
-var file_proto_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_proto_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_proto_auth_v1_auth_proto_goTypes = []any{
 	(*InitiateSignupRequest)(nil),  // 0: auth.v1.InitiateSignupRequest
 	(*InitiateSignupResponse)(nil), // 1: auth.v1.InitiateSignupResponse
+	(*CheckUsernameRequest)(nil),   // 2: auth.v1.CheckUsernameRequest
+	(*CheckUsernameResponse)(nil),  // 3: auth.v1.CheckUsernameResponse
 }
 var file_proto_auth_v1_auth_proto_depIdxs = []int32{
 	0, // 0: auth.v1.AuthService.InitiateSignup:input_type -> auth.v1.InitiateSignupRequest
-	1, // 1: auth.v1.AuthService.InitiateSignup:output_type -> auth.v1.InitiateSignupResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	2, // 1: auth.v1.AuthService.CheckUsernameAvailability:input_type -> auth.v1.CheckUsernameRequest
+	1, // 2: auth.v1.AuthService.InitiateSignup:output_type -> auth.v1.InitiateSignupResponse
+	3, // 3: auth.v1.AuthService.CheckUsernameAvailability:output_type -> auth.v1.CheckUsernameResponse
+	2, // [2:4] is the sub-list for method output_type
+	0, // [0:2] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -197,7 +320,7 @@ func file_proto_auth_v1_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_auth_v1_auth_proto_rawDesc), len(file_proto_auth_v1_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

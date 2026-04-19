@@ -7,5 +7,7 @@ import (
 )
 
 type AuthUseCase interface {
+	CheckUsernameAvailability(ctx context.Context, req *dto.CheckUsernameReq) (*dto.CheckUsernameRes, error)
 	InitiateSignup(ctx context.Context, req *dto.InitiateSignUpRequest) (*dto.InitiateSignUpResponce, error)
+	VerifySignup(ctx context.Context, req *dto.VerifySignupRequest) (*dto.AuthResponse, error)
 }
