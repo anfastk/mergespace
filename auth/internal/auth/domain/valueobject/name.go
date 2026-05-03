@@ -16,7 +16,7 @@ type Name struct {
 func NewName(raw string) (Name, error) {
 	raw = strings.TrimSpace(raw)
 
-	if len(raw) < 1 {
+	if len(raw) < 3 {
 		return Name{}, errs.ErrNameTooShort
 	}
 	if len(raw) > 50 {

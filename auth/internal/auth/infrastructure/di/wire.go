@@ -9,6 +9,7 @@ import (
 	"github.com/anfastk/mergespace/auth/internal/auth/adapter/outbound/otp"
 	"github.com/anfastk/mergespace/auth/internal/auth/adapter/outbound/postgres"
 	"github.com/anfastk/mergespace/auth/internal/auth/adapter/outbound/redis"
+	"github.com/anfastk/mergespace/auth/internal/auth/adapter/outbound/token"
 	"github.com/anfastk/mergespace/auth/internal/auth/adapter/outbound/worker"
 	"github.com/anfastk/mergespace/auth/internal/auth/application/usecase"
 	"github.com/anfastk/mergespace/auth/internal/auth/infrastructure/config"
@@ -68,6 +69,10 @@ func BuildApp() *App {
 	passwordHash := crypto.NewBcryptHasher(16)
 
 	outboxRepo := postgres.NewOutboxRepo(db)
+	tokenGen := token.NewJWTGenerator(
+		cfg.JWT.AccessSecret,
+		cfg.JWT.RefreshSecret,
+	)
 
 	authService := usecase.NewAuthService(
 		db,
@@ -78,11 +83,11 @@ func BuildApp() *App {
 		passwordHash,
 		producer,
 		outboxRepo,
+		tokenGen,
 	)
 
 	handler := grpc.NewAuthHandler(authService)
 
-	// 🔥 CREATE WORKER
 	outboxWorker := worker.NewOutboxWorker(outboxRepo, producer)
 
 	return &App{

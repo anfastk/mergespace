@@ -12,3 +12,7 @@ func ToInitiateDTO(req *authv1.InitiateSignupRequest) *dto.InitiateSignUpRequest
 func ToCheckUsernameDTO(req *authv1.CheckUsernameRequest) *dto.CheckUsernameReq {
 	return &dto.CheckUsernameReq{Username: req.Username}
 }
+
+func ToVerifySignupDTO(req *authv1.VerifySignupRequest) *dto.VerifySignupRequest {
+	return &dto.VerifySignupRequest{TempID: req.TempId, OTP: req.Otp}
+}

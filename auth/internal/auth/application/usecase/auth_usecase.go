@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/anfastk/mergespace/auth/internal/auth/application/dto"
-	"github.com/anfastk/mergespace/auth/internal/auth/application/event"
+	appErr "github.com/anfastk/mergespace/auth/internal/auth/application/errors"
 	"github.com/anfastk/mergespace/auth/internal/auth/application/port/inbound"
 	"github.com/anfastk/mergespace/auth/internal/auth/application/port/outbound"
 	"github.com/anfastk/mergespace/auth/internal/auth/domain/entity"
@@ -30,9 +30,10 @@ type AuthService struct {
 	passwordHasher outbound.PasswordHasher
 	eventProducer  outbound.EventProducer
 	outboxRepo     outbound.OutboxRepository
+	tokenGenerator outbound.TokenGenerator
 }
 
-func NewAuthService(db *pgxpool.Pool, user outbound.UserRepository, otpGen outbound.OTPGenerator, idGen outbound.IDGenerator, signupCtxStore outbound.SignupContextStore, passwordHasher outbound.PasswordHasher, producer outbound.EventProducer, outboxRepo outbound.OutboxRepository) *AuthService {
+func NewAuthService(db *pgxpool.Pool, user outbound.UserRepository, otpGen outbound.OTPGenerator, idGen outbound.IDGenerator, signupCtxStore outbound.SignupContextStore, passwordHasher outbound.PasswordHasher, producer outbound.EventProducer, outboxRepo outbound.OutboxRepository, tokenGen outbound.TokenGenerator) *AuthService {
 	return &AuthService{
 		db:             db,
 		userRepo:       user,
@@ -42,6 +43,7 @@ func NewAuthService(db *pgxpool.Pool, user outbound.UserRepository, otpGen outbo
 		passwordHasher: passwordHasher,
 		eventProducer:  producer,
 		outboxRepo:     outboxRepo,
+		tokenGenerator: tokenGen,
 	}
 }
 
@@ -49,27 +51,42 @@ func (s *AuthService) InitiateSignup(ctx context.Context, req *dto.InitiateSignU
 
 	email, err := valueobject.NewEmail(req.Email)
 	if err != nil {
-		return nil, errs.ErrInvalidEmail
+		return nil, appErr.FieldError{
+			Field: "email",
+			Err:   err,
+		}
 	}
 
 	firstname, err := valueobject.NewName(req.FirstName)
 	if err != nil {
-		return nil, err
+		return nil, appErr.FieldError{
+			Field: "first_name",
+			Err:   err,
+		}
 	}
 
 	lastname, err := valueobject.NewName(req.LastName)
 	if err != nil {
-		return nil, err
+		return nil, appErr.FieldError{
+			Field: "last_name",
+			Err:   err,
+		}
 	}
 
 	userName, err := valueobject.NewUsername(req.UserName)
 	if err != nil {
-		return nil, err
+		return nil, appErr.FieldError{
+			Field: "username",
+			Err:   err,
+		}
 	}
 
 	password, err := valueobject.NewPassword(req.Password)
 	if err != nil {
-		return nil, errs.ErrInvalidPassword
+		return nil, appErr.FieldError{
+			Field: "password",
+			Err:   err,
+		}
 	}
 
 	existing, err := s.signupCtxStore.FindByEmail(ctx, email)
@@ -179,13 +196,36 @@ func (s *AuthService) InitiateSignup(ctx context.Context, req *dto.InitiateSignU
 }
 
 func (s *AuthService) VerifySignup(ctx context.Context, req *dto.VerifySignupRequest) (*dto.AuthResponse, error) {
+
 	signupCtx, err := s.signupCtxStore.FindByID(ctx, entity.SignupContextID(req.TempID))
 	if err != nil {
 		return nil, err
 	}
 
+	if signupCtx == nil {
+		return nil, errs.ErrSignupContextNotFound
+	}
+
+	attempts, err := s.signupCtxStore.GetAttempts(ctx, entity.SignupContextID(req.TempID))
+	if err != nil {
+		return nil, err
+	}
+
+	if attempts >= 5 {
+		return nil, errs.ErrTooManyAttempts
+	}
+
 	if signupCtx.OTP != req.OTP {
+
+		if err := s.signupCtxStore.IncrementAttempts(ctx, entity.SignupContextID(req.TempID), 10*time.Minute); err != nil {
+			log.Println("failed to increment attempts:", err)
+		}
+
 		return nil, errs.ErrOTPInvalid
+	}
+
+	if err = s.signupCtxStore.DeleteAttempts(ctx, entity.SignupContextID(req.TempID)); err != nil {
+		return nil, err
 	}
 
 	userID, err := valueobject.NewUserID(s.idGen.NewID(ctx))
@@ -195,22 +235,34 @@ func (s *AuthService) VerifySignup(ctx context.Context, req *dto.VerifySignupReq
 
 	email, err := valueobject.NewEmail(signupCtx.Email)
 	if err != nil {
-		return nil, err
+		return nil, appErr.FieldError{
+			Field: "email",
+			Err:   err,
+		}
 	}
 
 	username, err := valueobject.NewUsername(signupCtx.Username)
 	if err != nil {
-		return nil, err
+		return nil, appErr.FieldError{
+			Field: "username",
+			Err:   err,
+		}
 	}
 
 	firstname, err := valueobject.NewName(signupCtx.FirstName)
 	if err != nil {
-		return nil, err
+		return nil, appErr.FieldError{
+			Field: "first_name",
+			Err:   err,
+		}
 	}
 
 	lastname, err := valueobject.NewName(signupCtx.LastName)
 	if err != nil {
-		return nil, err
+		return nil, appErr.FieldError{
+			Field: "last_name",
+			Err:   err,
+		}
 	}
 
 	user := entity.NewLocalUser(
@@ -220,25 +272,55 @@ func (s *AuthService) VerifySignup(ctx context.Context, req *dto.VerifySignupReq
 		signupCtx.PasswordHash,
 	)
 
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
 	if err := s.userRepo.CreateUser(ctx, user); err != nil {
 		return nil, err
 	}
 
-	event := event.UserCreated{
-		UserID:    userID.String(),
-		FirstName: firstname.String(),
-		LastName:  lastname.String(),
-		Email:     email.String(),
-		UserName:  username.String(),
+	payload, err := json.Marshal(map[string]string{
+		"user_id":   userID.String(),
+		"firstName": firstname.String(),
+		"lastName":  lastname.String(),
+		"email":     email.String(),
+		"username":  username.String(),
+	})
+	if err != nil {
+		return nil, err
 	}
 
-	go func() {
-		if err := s.eventProducer.PublishUserCreated(ctx, &event); err != nil {
-			log.Printf("Failed to publish user created event: %v\n", err)
-		}
-	}()
+	outbox := &entity.OutboxEvent{
+		ID:        s.idGen.NewID(ctx),
+		EventType: "UserCreated",
+		Payload:   payload,
+		Status:    "pending",
+	}
 
-	_ = s.signupCtxStore.Delete(ctx, entity.SignupContextID(req.TempID))
+	if err := s.outboxRepo.Save(ctx, tx, outbox); err != nil {
+		return nil, err
+	}
+
+	if err = s.signupCtxStore.Delete(ctx, entity.SignupContextID(req.TempID)); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	accessToken, accessExpiry, err := s.tokenGenerator.GenerateAccessToken(userID.String())
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken, err := s.tokenGenerator.GenerateRefreshToken(userID.String())
+	if err != nil {
+		return nil, err
+	}
 
 	return &dto.AuthResponse{
 		User: dto.UserRes{
@@ -247,9 +329,9 @@ func (s *AuthService) VerifySignup(ctx context.Context, req *dto.VerifySignupReq
 			Email:    user.Email.String(),
 			Status:   string(user.Status),
 		},
-		/* AccessToken:     AccessToken,
-		RefreshToken:    refreshToken, // Sent to Handler to set in Cookie
-		AccessExpiresAt: expiry, */
+		AccessToken:     accessToken,
+		RefreshToken:    refreshToken,
+		AccessExpiresAt: accessExpiry,
 	}, nil
 }
 

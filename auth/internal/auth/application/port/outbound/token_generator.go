@@ -1,7 +1,8 @@
 package outbound
 
-import "github.com/anfastk/mergespace/auth/internal/auth/domain/entity"
+import "time"
 
 type TokenGenerator interface {
-	Generate(user *entity.User) (string, string, int64, error)
+	GenerateAccessToken(userID string) (string, time.Time, error)
+	GenerateRefreshToken(userID string) (string, error)
 }

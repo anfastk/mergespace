@@ -9,6 +9,7 @@ import (
 	"github.com/anfastk/mergespace/auth/internal/auth/adapter/inbound/grpc/mapper"
 	"github.com/anfastk/mergespace/auth/internal/auth/application/port/inbound"
 	authv1 "github.com/anfastk/mergespace/contracts/gen/go/proto/auth/v1"
+	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
 type AuthHandler struct {
@@ -24,7 +25,6 @@ func NewAuthHandler(usecase inbound.AuthUseCase) *AuthHandler {
 func (h *AuthHandler) CheckUsernameAvailability(ctx context.Context, req *connect.Request[authv1.CheckUsernameRequest]) (*connect.Response[authv1.CheckUsernameResponse], error) {
 	result, err := h.usecase.CheckUsernameAvailability(ctx, mapper.ToCheckUsernameDTO(req.Msg))
 	if err != nil {
-		fmt.Println(err)
 		return nil, mapper.MapDomainError(err)
 	}
 
@@ -50,4 +50,36 @@ func (h *AuthHandler) InitiateSignup(ctx context.Context, req *connect.Request[a
 		TempId:  res.TempID,
 		Message: res.Message,
 	}), nil
+}
+
+func (h *AuthHandler) VerifySignup(ctx context.Context, req *connect.Request[authv1.VerifySignupRequest]) (*connect.Response[authv1.VerifySignupResponse], error) {
+	res, err := h.usecase.VerifySignup(ctx, mapper.ToVerifySignupDTO(req.Msg))
+	if err != nil {
+		log.Println(err)
+		return nil, mapper.MapDomainError(err)
+	}
+
+	response := connect.NewResponse(&authv1.VerifySignupResponse{
+		User: &authv1.UserRes{
+			Id:       res.User.ID,
+			Username: res.User.Username,
+			Email:    res.User.Email,
+			Avatar:   res.User.Avatar,
+			Status:   res.User.Status,
+		},
+		AccessToken:     res.AccessToken,
+		AccessExpiresAt: timestamppb.New(res.AccessExpiresAt),
+	})
+
+	response.Header().Add("Set-Cookie", buildRefreshCookie(res.RefreshToken))
+
+	return response, nil
+}
+
+func buildRefreshCookie(token string) string {
+	return fmt.Sprintf(
+		"refresh_token=%s; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=%d",
+		token,
+		7*24*60*60,
+	)
 }
