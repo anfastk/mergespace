@@ -41,5 +41,9 @@ func Load() (*Config, error) {
 			SchemaRegistryURL: getEnv("SCHEMA_REGISTRY_URL", "http://localhost:8081"),
 			UserSignupTopic:   getEnv("TOPIC_USER_AUTH", "auth.events"),
 		},
+		JWT: JWTConfig{
+			AccessSecret:  os.Getenv("JWT_ACCESS_SECRET"),
+			RefreshSecret: os.Getenv("JWT_REFRESH_SECRET"),
+		},
 	}, nil
 }

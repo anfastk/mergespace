@@ -12,8 +12,14 @@ type RedisConfig struct {
 	DB       int
 }
 
+type JWTConfig struct {
+	AccessSecret  string
+	RefreshSecret string
+}
+
 type Config struct {
 	DatabaseURL string
 	Kafka       KafkaConfig
 	Redis       RedisConfig
+	JWT         JWTConfig
 }

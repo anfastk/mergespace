@@ -2,6 +2,7 @@ package outbound
 
 import (
 	"context"
+	"time"
 
 	"github.com/anfastk/mergespace/auth/internal/auth/domain/entity"
 	"github.com/anfastk/mergespace/auth/internal/auth/domain/valueobject"
@@ -15,4 +16,8 @@ type SignupContextStore interface {
 
 	AcquireSignupSlot(ctx context.Context, email valueobject.Email) (bool, error)
 	ReleaseSignupSlot(ctx context.Context, email valueobject.Email) error
+
+	GetAttempts(ctx context.Context, id entity.SignupContextID) (int, error)
+	IncrementAttempts(ctx context.Context, id entity.SignupContextID, ttl time.Duration) error
+	DeleteAttempts(ctx context.Context, id entity.SignupContextID) error
 }

@@ -1,8 +1,10 @@
 package dto
 
+import "time"
+
 type AuthResponse struct {
 	User            UserRes
 	AccessToken     string
 	RefreshToken    string
-	AccessExpiresAt int64
+	AccessExpiresAt time.Time
 }

@@ -49,8 +49,8 @@ func (r *UserRepository) ExistsByUsername(ctx context.Context, username string) 
 
 func (r *UserRepository) CreateUser(ctx context.Context, user *entity.User) error {
 	query := `
-		INSERT INTO users (id, username, email, password_hash, created_at, updated_at) 
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO users (id, username, email, password_hash) 
+		VALUES ($1, $2, $3, $4)
 	`
 
 	_, err := r.db.Exec(ctx, query,

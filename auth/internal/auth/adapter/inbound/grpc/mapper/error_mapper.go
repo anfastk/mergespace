@@ -2,8 +2,10 @@ package mapper
 
 import (
 	"errors"
+	"strings"
 
 	"connectrpc.com/connect"
+	appErr "github.com/anfastk/mergespace/auth/internal/auth/application/errors"
 	"github.com/anfastk/mergespace/auth/internal/auth/domain/errs"
 )
 
@@ -111,6 +113,10 @@ var errorMap = map[error]errorMeta{
 		code:    connect.CodePermissionDenied,
 		message: "Account is suspended.",
 	},
+	errs.ErrSignupContextNotFound: {
+		code:    connect.CodeNotFound,
+		message: "Signup context not found.",
+	},
 
 	// ---------------- OTP ----------------
 	errs.ErrOTPInvalid: {
@@ -131,9 +137,32 @@ var errorMap = map[error]errorMeta{
 		code:    connect.CodeResourceExhausted,
 		message: "Too many requests. Please try again later.",
 	},
+
+	errs.ErrTooManyAttempts: {
+		code:    connect.CodeResourceExhausted,
+		message: "Too many OTP attempts. Please try again later.",
+	},
 }
 
 func MapDomainError(err error) error {
+
+	var fe appErr.FieldError
+	if errors.As(err, &fe) {
+
+		// find matching domain error
+		for domainErr, meta := range errorMap {
+			if errors.Is(fe.Err, domainErr) {
+
+				// inject field name into message
+				fieldName := strings.ReplaceAll(fe.Field, "_", " ")
+				fieldName = strings.Title(fieldName)
+
+				msg := strings.Replace(meta.message, "Name", fieldName, 1)
+
+				return connect.NewError(meta.code, errors.New(msg))
+			}
+		}
+	}
 
 	if meta, ok := errorMap[err]; ok {
 		return connect.NewError(meta.code, errors.New(meta.message))

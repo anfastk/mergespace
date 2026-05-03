@@ -32,9 +32,10 @@ var (
 	ErrEmailAlreadyExists = errors.New("EMAIL_ALREADY_EXISTS")
 
 	// Auth
-	ErrInvalidPassword    = errors.New("PASSWORD_INVALID")
-	ErrInvalidCredentials = errors.New("INVALID_CREDENTIALS")
-	ErrAccountSuspended   = errors.New("ACCOUNT_SUSPENDED")
+	ErrInvalidPassword       = errors.New("PASSWORD_INVALID")
+	ErrInvalidCredentials    = errors.New("INVALID_CREDENTIALS")
+	ErrAccountSuspended      = errors.New("ACCOUNT_SUSPENDED")
+	ErrSignupContextNotFound = errors.New("SIGNUP_CONTEXT_NOT_FOUND")
 
 	// OTP
 	ErrOTPInvalid     = errors.New("OTP_INVALID")
@@ -43,5 +44,6 @@ var (
 
 	// System
 	ErrInternalServer  = errors.New("INTERNAL_SERVER_ERROR")
+	ErrTooManyAttempts = errors.New("TOO_MANY_ATTEMPTS")
 	ErrTooManyRequests = errors.New("TOO_MANY_REQUESTS")
 )

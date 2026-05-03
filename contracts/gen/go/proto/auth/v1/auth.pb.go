@@ -9,6 +9,7 @@ package authv1
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
+	timestamppb "google.golang.org/protobuf/types/known/timestamppb"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
@@ -253,11 +254,207 @@ func (x *CheckUsernameResponse) GetSuggestions() []string {
 	return nil
 }
 
+type VerifySignupRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	TempId        string                 `protobuf:"bytes,1,opt,name=temp_id,json=tempId,proto3" json:"temp_id,omitempty"`
+	Otp           string                 `protobuf:"bytes,2,opt,name=otp,proto3" json:"otp,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *VerifySignupRequest) Reset() {
+	*x = VerifySignupRequest{}
+	mi := &file_proto_auth_v1_auth_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifySignupRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifySignupRequest) ProtoMessage() {}
+
+func (x *VerifySignupRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_v1_auth_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifySignupRequest.ProtoReflect.Descriptor instead.
+func (*VerifySignupRequest) Descriptor() ([]byte, []int) {
+	return file_proto_auth_v1_auth_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *VerifySignupRequest) GetTempId() string {
+	if x != nil {
+		return x.TempId
+	}
+	return ""
+}
+
+func (x *VerifySignupRequest) GetOtp() string {
+	if x != nil {
+		return x.Otp
+	}
+	return ""
+}
+
+type UserRes struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Id            string                 `protobuf:"bytes,1,opt,name=id,proto3" json:"id,omitempty"`
+	Username      string                 `protobuf:"bytes,2,opt,name=username,proto3" json:"username,omitempty"`
+	Email         string                 `protobuf:"bytes,3,opt,name=email,proto3" json:"email,omitempty"`
+	Avatar        string                 `protobuf:"bytes,4,opt,name=avatar,proto3" json:"avatar,omitempty"`
+	Status        string                 `protobuf:"bytes,5,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *UserRes) Reset() {
+	*x = UserRes{}
+	mi := &file_proto_auth_v1_auth_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *UserRes) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*UserRes) ProtoMessage() {}
+
+func (x *UserRes) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_v1_auth_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use UserRes.ProtoReflect.Descriptor instead.
+func (*UserRes) Descriptor() ([]byte, []int) {
+	return file_proto_auth_v1_auth_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *UserRes) GetId() string {
+	if x != nil {
+		return x.Id
+	}
+	return ""
+}
+
+func (x *UserRes) GetUsername() string {
+	if x != nil {
+		return x.Username
+	}
+	return ""
+}
+
+func (x *UserRes) GetEmail() string {
+	if x != nil {
+		return x.Email
+	}
+	return ""
+}
+
+func (x *UserRes) GetAvatar() string {
+	if x != nil {
+		return x.Avatar
+	}
+	return ""
+}
+
+func (x *UserRes) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
+type VerifySignupResponse struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	User            *UserRes               `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
+	AccessToken     string                 `protobuf:"bytes,2,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
+	RefreshToken    string                 `protobuf:"bytes,3,opt,name=refresh_token,json=refreshToken,proto3" json:"refresh_token,omitempty"`
+	AccessExpiresAt *timestamppb.Timestamp `protobuf:"bytes,4,opt,name=access_expires_at,json=accessExpiresAt,proto3" json:"access_expires_at,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *VerifySignupResponse) Reset() {
+	*x = VerifySignupResponse{}
+	mi := &file_proto_auth_v1_auth_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *VerifySignupResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*VerifySignupResponse) ProtoMessage() {}
+
+func (x *VerifySignupResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_v1_auth_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use VerifySignupResponse.ProtoReflect.Descriptor instead.
+func (*VerifySignupResponse) Descriptor() ([]byte, []int) {
+	return file_proto_auth_v1_auth_proto_rawDescGZIP(), []int{6}
+}
+
+func (x *VerifySignupResponse) GetUser() *UserRes {
+	if x != nil {
+		return x.User
+	}
+	return nil
+}
+
+func (x *VerifySignupResponse) GetAccessToken() string {
+	if x != nil {
+		return x.AccessToken
+	}
+	return ""
+}
+
+func (x *VerifySignupResponse) GetRefreshToken() string {
+	if x != nil {
+		return x.RefreshToken
+	}
+	return ""
+}
+
+func (x *VerifySignupResponse) GetAccessExpiresAt() *timestamppb.Timestamp {
+	if x != nil {
+		return x.AccessExpiresAt
+	}
+	return nil
+}
+
 var File_proto_auth_v1_auth_proto protoreflect.FileDescriptor
 
 const file_proto_auth_v1_auth_proto_rawDesc = "" +
 	"\n" +
-	"\x18proto/auth/v1/auth.proto\x12\aauth.v1\"\xa1\x01\n" +
+	"\x18proto/auth/v1/auth.proto\x12\aauth.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\xa1\x01\n" +
 	"\x15InitiateSignupRequest\x12\x1d\n" +
 	"\n" +
 	"first_name\x18\x01 \x01(\tR\tfirstName\x12\x1b\n" +
@@ -273,10 +470,25 @@ const file_proto_auth_v1_auth_proto_rawDesc = "" +
 	"\x15CheckUsernameResponse\x12\x1c\n" +
 	"\tavailable\x18\x01 \x01(\bR\tavailable\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12 \n" +
-	"\vsuggestions\x18\x03 \x03(\tR\vsuggestions2\xbc\x01\n" +
+	"\vsuggestions\x18\x03 \x03(\tR\vsuggestions\"@\n" +
+	"\x13VerifySignupRequest\x12\x17\n" +
+	"\atemp_id\x18\x01 \x01(\tR\x06tempId\x12\x10\n" +
+	"\x03otp\x18\x02 \x01(\tR\x03otp\"{\n" +
+	"\aUserRes\x12\x0e\n" +
+	"\x02id\x18\x01 \x01(\tR\x02id\x12\x1a\n" +
+	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
+	"\x05email\x18\x03 \x01(\tR\x05email\x12\x16\n" +
+	"\x06avatar\x18\x04 \x01(\tR\x06avatar\x12\x16\n" +
+	"\x06status\x18\x05 \x01(\tR\x06status\"\xcc\x01\n" +
+	"\x14VerifySignupResponse\x12$\n" +
+	"\x04user\x18\x01 \x01(\v2\x10.auth.v1.UserResR\x04user\x12!\n" +
+	"\faccess_token\x18\x02 \x01(\tR\vaccessToken\x12#\n" +
+	"\rrefresh_token\x18\x03 \x01(\tR\frefreshToken\x12F\n" +
+	"\x11access_expires_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x0faccessExpiresAt2\x89\x02\n" +
 	"\vAuthService\x12Q\n" +
 	"\x0eInitiateSignup\x12\x1e.auth.v1.InitiateSignupRequest\x1a\x1f.auth.v1.InitiateSignupResponse\x12Z\n" +
-	"\x19CheckUsernameAvailability\x12\x1d.auth.v1.CheckUsernameRequest\x1a\x1e.auth.v1.CheckUsernameResponseBEZCgithub.com/anfastk/mergespace/contracts/gen/go/proto/auth/v1;authv1b\x06proto3"
+	"\x19CheckUsernameAvailability\x12\x1d.auth.v1.CheckUsernameRequest\x1a\x1e.auth.v1.CheckUsernameResponse\x12K\n" +
+	"\fVerifySignup\x12\x1c.auth.v1.VerifySignupRequest\x1a\x1d.auth.v1.VerifySignupResponseBEZCgithub.com/anfastk/mergespace/contracts/gen/go/proto/auth/v1;authv1b\x06proto3"
 
 var (
 	file_proto_auth_v1_auth_proto_rawDescOnce sync.Once
@@ -290,23 +502,31 @@ func file_proto_auth_v1_auth_proto_rawDescGZIP() []byte {
 	return file_proto_auth_v1_auth_proto_rawDescData
 }
 
-var file_proto_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_proto_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_proto_auth_v1_auth_proto_goTypes = []any{
 	(*InitiateSignupRequest)(nil),  // 0: auth.v1.InitiateSignupRequest
 	(*InitiateSignupResponse)(nil), // 1: auth.v1.InitiateSignupResponse
 	(*CheckUsernameRequest)(nil),   // 2: auth.v1.CheckUsernameRequest
 	(*CheckUsernameResponse)(nil),  // 3: auth.v1.CheckUsernameResponse
+	(*VerifySignupRequest)(nil),    // 4: auth.v1.VerifySignupRequest
+	(*UserRes)(nil),                // 5: auth.v1.UserRes
+	(*VerifySignupResponse)(nil),   // 6: auth.v1.VerifySignupResponse
+	(*timestamppb.Timestamp)(nil),  // 7: google.protobuf.Timestamp
 }
 var file_proto_auth_v1_auth_proto_depIdxs = []int32{
-	0, // 0: auth.v1.AuthService.InitiateSignup:input_type -> auth.v1.InitiateSignupRequest
-	2, // 1: auth.v1.AuthService.CheckUsernameAvailability:input_type -> auth.v1.CheckUsernameRequest
-	1, // 2: auth.v1.AuthService.InitiateSignup:output_type -> auth.v1.InitiateSignupResponse
-	3, // 3: auth.v1.AuthService.CheckUsernameAvailability:output_type -> auth.v1.CheckUsernameResponse
-	2, // [2:4] is the sub-list for method output_type
-	0, // [0:2] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	5, // 0: auth.v1.VerifySignupResponse.user:type_name -> auth.v1.UserRes
+	7, // 1: auth.v1.VerifySignupResponse.access_expires_at:type_name -> google.protobuf.Timestamp
+	0, // 2: auth.v1.AuthService.InitiateSignup:input_type -> auth.v1.InitiateSignupRequest
+	2, // 3: auth.v1.AuthService.CheckUsernameAvailability:input_type -> auth.v1.CheckUsernameRequest
+	4, // 4: auth.v1.AuthService.VerifySignup:input_type -> auth.v1.VerifySignupRequest
+	1, // 5: auth.v1.AuthService.InitiateSignup:output_type -> auth.v1.InitiateSignupResponse
+	3, // 6: auth.v1.AuthService.CheckUsernameAvailability:output_type -> auth.v1.CheckUsernameResponse
+	6, // 7: auth.v1.AuthService.VerifySignup:output_type -> auth.v1.VerifySignupResponse
+	5, // [5:8] is the sub-list for method output_type
+	2, // [2:5] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_proto_auth_v1_auth_proto_init() }
@@ -320,7 +540,7 @@ func file_proto_auth_v1_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_auth_v1_auth_proto_rawDesc), len(file_proto_auth_v1_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
