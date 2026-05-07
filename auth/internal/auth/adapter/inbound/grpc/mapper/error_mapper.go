@@ -7,6 +7,8 @@ import (
 	"connectrpc.com/connect"
 	appErr "github.com/anfastk/mergespace/auth/internal/auth/application/errors"
 	"github.com/anfastk/mergespace/auth/internal/auth/domain/errs"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 type errorMeta struct {
@@ -149,13 +151,13 @@ func MapDomainError(err error) error {
 	var fe appErr.FieldError
 	if errors.As(err, &fe) {
 
-		// find matching domain error
 		for domainErr, meta := range errorMap {
 			if errors.Is(fe.Err, domainErr) {
 
-				// inject field name into message
+				c := cases.Title(language.English)
+
 				fieldName := strings.ReplaceAll(fe.Field, "_", " ")
-				fieldName = strings.Title(fieldName)
+				fieldName = c.String(fieldName)
 
 				msg := strings.Replace(meta.message, "Name", fieldName, 1)
 

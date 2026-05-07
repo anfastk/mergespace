@@ -20,4 +20,8 @@ type SignupContextStore interface {
 	GetAttempts(ctx context.Context, id entity.SignupContextID) (int, error)
 	IncrementAttempts(ctx context.Context, id entity.SignupContextID, ttl time.Duration) error
 	DeleteAttempts(ctx context.Context, id entity.SignupContextID) error
+
+	GetLastOTPSentAt(ctx context.Context, id entity.SignupContextID) (time.Time, error)
+	SetLastOTPSentAt(ctx context.Context, id entity.SignupContextID, t time.Time) error
+	Update(ctx context.Context, signupCtx *entity.SignupContext) error
 }

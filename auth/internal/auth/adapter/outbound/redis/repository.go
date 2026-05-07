@@ -17,17 +17,8 @@ import (
 const signupContextKeyPrefix = "signup_context:pending:id:"
 const signupEmailIndexPrefix = "signup_context:pending:email:"
 const signupContextOTPAttemptsKeyPrefix = "otp:attempts:id:"
+const signupOTPSentKeyPrefix = "signup:otp_sent:id:"
 const signupContextTTL = 10 * time.Minute
-
-type SignupContextModel struct {
-	ID           string `json:"id"`
-	FirstName    string `json:"firstname"`
-	LastName     string `json:"lastname"`
-	Email        string `json:"email"`
-	Username     string `json:"username"`
-	PasswordHash string `json:"password_hash"`
-	OTP          string `json:"otp"`
-}
 
 type SignupContextRedisStore struct {
 	client *redis.Client
@@ -51,8 +42,12 @@ func (r *SignupContextRedisStore) redisOTPAttemptsKey(id entity.SignupContextID)
 	return fmt.Sprintf("%s%s", signupContextOTPAttemptsKeyPrefix, id)
 }
 
+func (r *SignupContextRedisStore) redisOTPSentKey(id entity.SignupContextID) string {
+	return fmt.Sprintf("%s%s", signupOTPSentKeyPrefix, id)
+}
+
 func (r *SignupContextRedisStore) Save(ctx context.Context, signup *entity.SignupContext) error {
-	model := SignupContexModel{
+	model := SignupContextModel{
 		ID:           string(signup.ID),
 		FirstName:    signup.FirstName,
 		LastName:     signup.LastName,
@@ -116,6 +111,9 @@ func (r *SignupContextRedisStore) Delete(ctx context.Context, id entity.SignupCo
 
 	pipe.Del(ctx, r.redisSignupContextKey(id))
 	pipe.Del(ctx, r.redisEmailKey(fmt.Sprint(existing.Email)))
+	pipe.Del(ctx, r.redisOTPAttemptsKey(id))
+	pipe.Del(ctx, r.redisOTPSentKey(id))
+	pipe.Del(ctx, "signup:lock:"+existing.Email)
 
 	if _, err := pipe.Exec(ctx); err != nil {
 		return fmt.Errorf("redis delete - pipeline execution failed: %w", err)
@@ -190,4 +188,65 @@ func (r *SignupContextRedisStore) IncrementAttempts(ctx context.Context, id enti
 
 func (r *SignupContextRedisStore) DeleteAttempts(ctx context.Context, id entity.SignupContextID) error {
 	return r.client.Del(ctx, r.redisOTPAttemptsKey(id)).Err()
+}
+
+func (r *SignupContextRedisStore) GetLastOTPSentAt(ctx context.Context, id entity.SignupContextID) (time.Time, error) {
+
+	val, err := r.client.Get(ctx, r.redisOTPSentKey(id)).Result()
+
+	if err == redis.Nil {
+		return time.Time{}, nil
+	}
+
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	parsed, err := time.Parse(time.RFC3339, val)
+	if err != nil {
+		return time.Time{}, err
+	}
+
+	return parsed, nil
+}
+
+func (r *SignupContextRedisStore) SetLastOTPSentAt(ctx context.Context, id entity.SignupContextID, t time.Time) error {
+
+	return r.client.Set(
+		ctx,
+		r.redisOTPSentKey(id),
+		t.Format(time.RFC3339),
+		signupContextTTL,
+	).Err()
+}
+
+func (r *SignupContextRedisStore) Update(ctx context.Context, signup *entity.SignupContext) error {
+
+	model := SignupContextModel{
+		ID:           string(signup.ID),
+		FirstName:    signup.FirstName,
+		LastName:     signup.LastName,
+		Email:        signup.Email,
+		Username:     signup.Username,
+		PasswordHash: signup.PasswordHash,
+		OTP:          signup.OTP,
+	}
+
+	data, err := json.Marshal(model)
+	if err != nil {
+		return err
+	}
+
+	key := r.redisSignupContextKey(signup.ID)
+
+	ttl, err := r.client.TTL(ctx, key).Result()
+	if err != nil {
+		return err
+	}
+
+	if ttl <= 0 {
+		ttl = signupContextTTL
+	}
+
+	return r.client.Set(ctx, key, data, ttl).Err()
 }

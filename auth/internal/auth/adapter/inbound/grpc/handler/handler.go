@@ -7,6 +7,7 @@ import (
 
 	"connectrpc.com/connect"
 	"github.com/anfastk/mergespace/auth/internal/auth/adapter/inbound/grpc/mapper"
+	"github.com/anfastk/mergespace/auth/internal/auth/application/dto"
 	"github.com/anfastk/mergespace/auth/internal/auth/application/port/inbound"
 	authv1 "github.com/anfastk/mergespace/contracts/gen/go/proto/auth/v1"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -82,4 +83,19 @@ func buildRefreshCookie(token string) string {
 		token,
 		7*24*60*60,
 	)
+}
+
+func (h *AuthHandler) ResendOTP(ctx context.Context, req *connect.Request[authv1.ResendOTPRequest]) (*connect.Response[authv1.InitiateSignupResponse], error) {
+
+	res, err := h.usecase.ResendOTP(ctx, &dto.ResendOTPRequest{
+		TempID: req.Msg.TempId,
+	})
+	if err != nil {
+		return nil, mapper.MapDomainError(err)
+	}
+
+	return connect.NewResponse(&authv1.InitiateSignupResponse{
+		TempId:  res.TempID,
+		Message: res.Message,
+	}), nil
 }

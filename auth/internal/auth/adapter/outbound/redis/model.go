@@ -1,6 +1,6 @@
 package redis
 
-type SignupContexModel struct {
+type SignupContextModel struct {
 	ID           string `json:"id"`
 	FirstName    string `json:"firstname"`
 	LastName     string `json:"lastname"`

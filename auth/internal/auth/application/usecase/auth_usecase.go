@@ -95,9 +95,26 @@ func (s *AuthService) InitiateSignup(ctx context.Context, req *dto.InitiateSignU
 	}
 
 	if existing != nil {
+
+		lastSentAt, err := s.signupCtxStore.GetLastOTPSentAt(ctx, existing.ID)
+		if err == nil {
+
+			remaining := 60*time.Second - time.Since(lastSentAt)
+
+			if remaining > 0 {
+				return &dto.InitiateSignUpResponce{
+					TempID: string(existing.ID),
+					Message: fmt.Sprintf(
+						"OTP already sent. Please wait %d seconds before requesting again.",
+						int(remaining.Seconds()),
+					),
+				}, nil
+			}
+		}
+
 		return &dto.InitiateSignUpResponce{
 			TempID:  string(existing.ID),
-			Message: "OTP already sent. Please check your email.",
+			Message: "OTP already sent. You can use resend OTP.",
 		}, nil
 	}
 
@@ -165,6 +182,10 @@ func (s *AuthService) InitiateSignup(ctx context.Context, req *dto.InitiateSignU
 	if err := s.signupCtxStore.Save(ctx, pending); err != nil {
 		release()
 		return nil, err
+	}
+
+	if err := s.signupCtxStore.SetLastOTPSentAt(ctx, tempID, time.Now()); err != nil {
+		log.Printf("failed to save otp sent time: %v", err)
 	}
 
 	payload, _ := json.Marshal(map[string]string{
@@ -382,4 +403,69 @@ func (s *AuthService) generateSuggestions(base string) []string {
 	suggestions = append(suggestions, s4)
 
 	return suggestions
+}
+
+func (s *AuthService) ResendOTP(ctx context.Context, req *dto.ResendOTPRequest) (*dto.InitiateSignUpResponce, error) {
+
+	signupCtx, err := s.signupCtxStore.FindByID(ctx, entity.SignupContextID(req.TempID))
+	if err != nil {
+		return nil, err
+	}
+
+	if signupCtx == nil {
+		return nil, errs.ErrSignupContextNotFound
+	}
+
+	lastSentAt, err := s.signupCtxStore.GetLastOTPSentAt(ctx, signupCtx.ID)
+	if err == nil {
+		if time.Since(lastSentAt) < 60*time.Second {
+			return nil, errs.ErrTooManyRequests
+		}
+	}
+
+	otp, err := s.otpGen.Generate(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	signupCtx.OTP = otp
+
+	if err := s.signupCtxStore.Update(ctx, signupCtx); err != nil {
+		return nil, err
+	}
+
+	if err := s.signupCtxStore.SetLastOTPSentAt(ctx, signupCtx.ID, time.Now()); err != nil {
+		log.Println("failed to set OTP sent time:", err)
+	}
+
+	payload, _ := json.Marshal(map[string]string{
+		"email": signupCtx.Email,
+		"otp":   otp,
+	})
+
+	outbox := &entity.OutboxEvent{
+		ID:        s.idGen.NewID(ctx),
+		EventType: "SendOTP",
+		Payload:   payload,
+		Status:    "pending",
+	}
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	if err := s.outboxRepo.Save(ctx, tx, outbox); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	return &dto.InitiateSignUpResponce{
+		TempID:  string(signupCtx.ID),
+		Message: "OTP resent successfully",
+	}, nil
 }

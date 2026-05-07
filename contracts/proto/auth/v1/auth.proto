@@ -49,10 +49,17 @@ message VerifySignupResponse {
   google.protobuf.Timestamp access_expires_at = 4;
 }
 
+message ResendOTPRequest {
+  string temp_id = 1;
+}
+
 service AuthService {
   rpc InitiateSignup(InitiateSignupRequest) returns (InitiateSignupResponse);
 
   rpc CheckUsernameAvailability(CheckUsernameRequest) returns (CheckUsernameResponse);
 
   rpc VerifySignup(VerifySignupRequest) returns (VerifySignupResponse);
+
+  rpc ResendOTP(ResendOTPRequest) returns (InitiateSignupResponse);
+
 }
