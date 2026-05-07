@@ -11,4 +11,5 @@ type AuthUseCase interface {
 	InitiateSignup(ctx context.Context, req *dto.InitiateSignUpRequest) (*dto.InitiateSignUpResponce, error)
 	VerifySignup(ctx context.Context, req *dto.VerifySignupRequest) (*dto.AuthResponse, error)
 	ResendOTP(ctx context.Context, req *dto.ResendOTPRequest) (*dto.InitiateSignUpResponce, error)
+	Login(ctx context.Context, req *dto.LoginRequest) (*dto.AuthResponse, error)
 }

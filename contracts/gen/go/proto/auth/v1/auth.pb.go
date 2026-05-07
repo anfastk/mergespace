@@ -382,7 +382,7 @@ func (x *UserRes) GetStatus() string {
 	return ""
 }
 
-type VerifySignupResponse struct {
+type AuthResponse struct {
 	state           protoimpl.MessageState `protogen:"open.v1"`
 	User            *UserRes               `protobuf:"bytes,1,opt,name=user,proto3" json:"user,omitempty"`
 	AccessToken     string                 `protobuf:"bytes,2,opt,name=access_token,json=accessToken,proto3" json:"access_token,omitempty"`
@@ -392,20 +392,20 @@ type VerifySignupResponse struct {
 	sizeCache       protoimpl.SizeCache
 }
 
-func (x *VerifySignupResponse) Reset() {
-	*x = VerifySignupResponse{}
+func (x *AuthResponse) Reset() {
+	*x = AuthResponse{}
 	mi := &file_proto_auth_v1_auth_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *VerifySignupResponse) String() string {
+func (x *AuthResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*VerifySignupResponse) ProtoMessage() {}
+func (*AuthResponse) ProtoMessage() {}
 
-func (x *VerifySignupResponse) ProtoReflect() protoreflect.Message {
+func (x *AuthResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_proto_auth_v1_auth_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -417,33 +417,33 @@ func (x *VerifySignupResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use VerifySignupResponse.ProtoReflect.Descriptor instead.
-func (*VerifySignupResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use AuthResponse.ProtoReflect.Descriptor instead.
+func (*AuthResponse) Descriptor() ([]byte, []int) {
 	return file_proto_auth_v1_auth_proto_rawDescGZIP(), []int{6}
 }
 
-func (x *VerifySignupResponse) GetUser() *UserRes {
+func (x *AuthResponse) GetUser() *UserRes {
 	if x != nil {
 		return x.User
 	}
 	return nil
 }
 
-func (x *VerifySignupResponse) GetAccessToken() string {
+func (x *AuthResponse) GetAccessToken() string {
 	if x != nil {
 		return x.AccessToken
 	}
 	return ""
 }
 
-func (x *VerifySignupResponse) GetRefreshToken() string {
+func (x *AuthResponse) GetRefreshToken() string {
 	if x != nil {
 		return x.RefreshToken
 	}
 	return ""
 }
 
-func (x *VerifySignupResponse) GetAccessExpiresAt() *timestamppb.Timestamp {
+func (x *AuthResponse) GetAccessExpiresAt() *timestamppb.Timestamp {
 	if x != nil {
 		return x.AccessExpiresAt
 	}
@@ -494,6 +494,58 @@ func (x *ResendOTPRequest) GetTempId() string {
 	return ""
 }
 
+type LoginRequest struct {
+	state           protoimpl.MessageState `protogen:"open.v1"`
+	EmailOrUsername string                 `protobuf:"bytes,1,opt,name=email_or_username,json=emailOrUsername,proto3" json:"email_or_username,omitempty"`
+	Password        string                 `protobuf:"bytes,2,opt,name=password,proto3" json:"password,omitempty"`
+	unknownFields   protoimpl.UnknownFields
+	sizeCache       protoimpl.SizeCache
+}
+
+func (x *LoginRequest) Reset() {
+	*x = LoginRequest{}
+	mi := &file_proto_auth_v1_auth_proto_msgTypes[8]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LoginRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LoginRequest) ProtoMessage() {}
+
+func (x *LoginRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_v1_auth_proto_msgTypes[8]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LoginRequest.ProtoReflect.Descriptor instead.
+func (*LoginRequest) Descriptor() ([]byte, []int) {
+	return file_proto_auth_v1_auth_proto_rawDescGZIP(), []int{8}
+}
+
+func (x *LoginRequest) GetEmailOrUsername() string {
+	if x != nil {
+		return x.EmailOrUsername
+	}
+	return ""
+}
+
+func (x *LoginRequest) GetPassword() string {
+	if x != nil {
+		return x.Password
+	}
+	return ""
+}
+
 var File_proto_auth_v1_auth_proto protoreflect.FileDescriptor
 
 const file_proto_auth_v1_auth_proto_rawDesc = "" +
@@ -523,19 +575,23 @@ const file_proto_auth_v1_auth_proto_rawDesc = "" +
 	"\busername\x18\x02 \x01(\tR\busername\x12\x14\n" +
 	"\x05email\x18\x03 \x01(\tR\x05email\x12\x16\n" +
 	"\x06avatar\x18\x04 \x01(\tR\x06avatar\x12\x16\n" +
-	"\x06status\x18\x05 \x01(\tR\x06status\"\xcc\x01\n" +
-	"\x14VerifySignupResponse\x12$\n" +
+	"\x06status\x18\x05 \x01(\tR\x06status\"\xc4\x01\n" +
+	"\fAuthResponse\x12$\n" +
 	"\x04user\x18\x01 \x01(\v2\x10.auth.v1.UserResR\x04user\x12!\n" +
 	"\faccess_token\x18\x02 \x01(\tR\vaccessToken\x12#\n" +
 	"\rrefresh_token\x18\x03 \x01(\tR\frefreshToken\x12F\n" +
 	"\x11access_expires_at\x18\x04 \x01(\v2\x1a.google.protobuf.TimestampR\x0faccessExpiresAt\"+\n" +
 	"\x10ResendOTPRequest\x12\x17\n" +
-	"\atemp_id\x18\x01 \x01(\tR\x06tempId2\xd2\x02\n" +
+	"\atemp_id\x18\x01 \x01(\tR\x06tempId\"V\n" +
+	"\fLoginRequest\x12*\n" +
+	"\x11email_or_username\x18\x01 \x01(\tR\x0femailOrUsername\x12\x1a\n" +
+	"\bpassword\x18\x02 \x01(\tR\bpassword2\x81\x03\n" +
 	"\vAuthService\x12Q\n" +
 	"\x0eInitiateSignup\x12\x1e.auth.v1.InitiateSignupRequest\x1a\x1f.auth.v1.InitiateSignupResponse\x12Z\n" +
-	"\x19CheckUsernameAvailability\x12\x1d.auth.v1.CheckUsernameRequest\x1a\x1e.auth.v1.CheckUsernameResponse\x12K\n" +
-	"\fVerifySignup\x12\x1c.auth.v1.VerifySignupRequest\x1a\x1d.auth.v1.VerifySignupResponse\x12G\n" +
-	"\tResendOTP\x12\x19.auth.v1.ResendOTPRequest\x1a\x1f.auth.v1.InitiateSignupResponseBEZCgithub.com/anfastk/mergespace/contracts/gen/go/proto/auth/v1;authv1b\x06proto3"
+	"\x19CheckUsernameAvailability\x12\x1d.auth.v1.CheckUsernameRequest\x1a\x1e.auth.v1.CheckUsernameResponse\x12C\n" +
+	"\fVerifySignup\x12\x1c.auth.v1.VerifySignupRequest\x1a\x15.auth.v1.AuthResponse\x12G\n" +
+	"\tResendOTP\x12\x19.auth.v1.ResendOTPRequest\x1a\x1f.auth.v1.InitiateSignupResponse\x125\n" +
+	"\x05Login\x12\x15.auth.v1.LoginRequest\x1a\x15.auth.v1.AuthResponseBEZCgithub.com/anfastk/mergespace/contracts/gen/go/proto/auth/v1;authv1b\x06proto3"
 
 var (
 	file_proto_auth_v1_auth_proto_rawDescOnce sync.Once
@@ -549,7 +605,7 @@ func file_proto_auth_v1_auth_proto_rawDescGZIP() []byte {
 	return file_proto_auth_v1_auth_proto_rawDescData
 }
 
-var file_proto_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_proto_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
 var file_proto_auth_v1_auth_proto_goTypes = []any{
 	(*InitiateSignupRequest)(nil),  // 0: auth.v1.InitiateSignupRequest
 	(*InitiateSignupResponse)(nil), // 1: auth.v1.InitiateSignupResponse
@@ -557,23 +613,26 @@ var file_proto_auth_v1_auth_proto_goTypes = []any{
 	(*CheckUsernameResponse)(nil),  // 3: auth.v1.CheckUsernameResponse
 	(*VerifySignupRequest)(nil),    // 4: auth.v1.VerifySignupRequest
 	(*UserRes)(nil),                // 5: auth.v1.UserRes
-	(*VerifySignupResponse)(nil),   // 6: auth.v1.VerifySignupResponse
+	(*AuthResponse)(nil),           // 6: auth.v1.AuthResponse
 	(*ResendOTPRequest)(nil),       // 7: auth.v1.ResendOTPRequest
-	(*timestamppb.Timestamp)(nil),  // 8: google.protobuf.Timestamp
+	(*LoginRequest)(nil),           // 8: auth.v1.LoginRequest
+	(*timestamppb.Timestamp)(nil),  // 9: google.protobuf.Timestamp
 }
 var file_proto_auth_v1_auth_proto_depIdxs = []int32{
-	5, // 0: auth.v1.VerifySignupResponse.user:type_name -> auth.v1.UserRes
-	8, // 1: auth.v1.VerifySignupResponse.access_expires_at:type_name -> google.protobuf.Timestamp
+	5, // 0: auth.v1.AuthResponse.user:type_name -> auth.v1.UserRes
+	9, // 1: auth.v1.AuthResponse.access_expires_at:type_name -> google.protobuf.Timestamp
 	0, // 2: auth.v1.AuthService.InitiateSignup:input_type -> auth.v1.InitiateSignupRequest
 	2, // 3: auth.v1.AuthService.CheckUsernameAvailability:input_type -> auth.v1.CheckUsernameRequest
 	4, // 4: auth.v1.AuthService.VerifySignup:input_type -> auth.v1.VerifySignupRequest
 	7, // 5: auth.v1.AuthService.ResendOTP:input_type -> auth.v1.ResendOTPRequest
-	1, // 6: auth.v1.AuthService.InitiateSignup:output_type -> auth.v1.InitiateSignupResponse
-	3, // 7: auth.v1.AuthService.CheckUsernameAvailability:output_type -> auth.v1.CheckUsernameResponse
-	6, // 8: auth.v1.AuthService.VerifySignup:output_type -> auth.v1.VerifySignupResponse
-	1, // 9: auth.v1.AuthService.ResendOTP:output_type -> auth.v1.InitiateSignupResponse
-	6, // [6:10] is the sub-list for method output_type
-	2, // [2:6] is the sub-list for method input_type
+	8, // 6: auth.v1.AuthService.Login:input_type -> auth.v1.LoginRequest
+	1, // 7: auth.v1.AuthService.InitiateSignup:output_type -> auth.v1.InitiateSignupResponse
+	3, // 8: auth.v1.AuthService.CheckUsernameAvailability:output_type -> auth.v1.CheckUsernameResponse
+	6, // 9: auth.v1.AuthService.VerifySignup:output_type -> auth.v1.AuthResponse
+	1, // 10: auth.v1.AuthService.ResendOTP:output_type -> auth.v1.InitiateSignupResponse
+	6, // 11: auth.v1.AuthService.Login:output_type -> auth.v1.AuthResponse
+	7, // [7:12] is the sub-list for method output_type
+	2, // [2:7] is the sub-list for method input_type
 	2, // [2:2] is the sub-list for extension type_name
 	2, // [2:2] is the sub-list for extension extendee
 	0, // [0:2] is the sub-list for field type_name
@@ -590,7 +649,7 @@ func file_proto_auth_v1_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_auth_v1_auth_proto_rawDesc), len(file_proto_auth_v1_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   9,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -36,6 +36,7 @@ var (
 	ErrInvalidCredentials    = errors.New("INVALID_CREDENTIALS")
 	ErrAccountSuspended      = errors.New("ACCOUNT_SUSPENDED")
 	ErrSignupContextNotFound = errors.New("SIGNUP_CONTEXT_NOT_FOUND")
+	ErrUserInactive          = errors.New("USER_INACTIVE")
 
 	// OTP
 	ErrOTPInvalid     = errors.New("OTP_INVALID")

@@ -7,6 +7,8 @@ import (
 
 	"github.com/anfastk/mergespace/auth/internal/auth/application/port/outbound"
 	"github.com/anfastk/mergespace/auth/internal/auth/domain/entity"
+	"github.com/anfastk/mergespace/auth/internal/auth/domain/errs"
+	"github.com/anfastk/mergespace/auth/internal/auth/domain/valueobject"
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -89,6 +91,67 @@ func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*entity
 		}
 		return nil, fmt.Errorf("failed to find user by email: %w", err)
 	}
+
+	return user, nil
+}
+
+func (r *UserRepository) FindByEmailOrUsername(ctx context.Context, value string) (*entity.User, error) {
+
+	query := `
+	SELECT id, email, username, password_hash, status
+	FROM users
+	WHERE email = $1 OR username = $1
+	LIMIT 1
+	`
+
+	row := r.db.QueryRow(ctx, query, value)
+
+	var (
+		id           string
+		email        string
+		username     string
+		passwordHash string
+		status       string
+	)
+
+	err := row.Scan(
+		&id,
+		&email,
+		&username,
+		&passwordHash,
+		&status,
+	)
+
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errs.ErrInvalidCredentials
+		}
+		return nil, err
+	}
+
+	userID, err := valueobject.NewUserID(id)
+	if err != nil {
+		return nil, err
+	}
+
+	userEmail, err := valueobject.NewEmail(email)
+	if err != nil {
+		return nil, err
+	}
+
+	userUsername, err := valueobject.NewUsername(username)
+	if err != nil {
+		return nil, err
+	}
+
+	user := entity.NewLocalUser(
+		userID,
+		userEmail,
+		userUsername,
+		passwordHash,
+	)
+
+	user.Status = entity.UserStatus(status)
 
 	return user, nil
 }

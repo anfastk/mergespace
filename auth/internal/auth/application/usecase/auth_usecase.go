@@ -469,3 +469,51 @@ func (s *AuthService) ResendOTP(ctx context.Context, req *dto.ResendOTPRequest) 
 		Message: "OTP resent successfully",
 	}, nil
 }
+
+func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.AuthResponse, error) {
+
+	user, err := s.userRepo.FindByEmailOrUsername(
+		ctx,
+		req.EmailOrUsername,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := s.passwordHasher.Compare(
+		*user.Password,
+		req.Password,
+	); err != nil {
+		return nil, errs.ErrInvalidCredentials
+	}
+
+	if user.Status != entity.UserStatusActive {
+		return nil, errs.ErrUserInactive
+	}
+
+	accessToken, accessExpiry, err := s.tokenGenerator.GenerateAccessToken(
+		user.UserID.String(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	refreshToken, err := s.tokenGenerator.GenerateRefreshToken(
+		user.UserID.String(),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &dto.AuthResponse{
+		User: dto.UserRes{
+			ID:       user.UserID.String(),
+			Username: user.Username.String(),
+			Email:    user.Email.String(),
+			Status:   string(user.Status),
+		},
+		AccessToken:     accessToken,
+		RefreshToken:    refreshToken,
+		AccessExpiresAt: accessExpiry,
+	}, nil
+}
