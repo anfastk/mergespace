@@ -42,7 +42,7 @@ message UserRes {
   string status = 5;
 }
 
-message VerifySignupResponse {
+message AuthResponse {
   UserRes user = 1;
   string access_token = 2;
   string refresh_token = 3;
@@ -53,13 +53,20 @@ message ResendOTPRequest {
   string temp_id = 1;
 }
 
+message LoginRequest {
+  string email_or_username = 1;
+  string password = 2;
+}
+
 service AuthService {
   rpc InitiateSignup(InitiateSignupRequest) returns (InitiateSignupResponse);
 
   rpc CheckUsernameAvailability(CheckUsernameRequest) returns (CheckUsernameResponse);
 
-  rpc VerifySignup(VerifySignupRequest) returns (VerifySignupResponse);
+  rpc VerifySignup(VerifySignupRequest) returns (AuthResponse);
 
   rpc ResendOTP(ResendOTPRequest) returns (InitiateSignupResponse);
+
+  rpc Login(LoginRequest) returns (AuthResponse);
 
 }

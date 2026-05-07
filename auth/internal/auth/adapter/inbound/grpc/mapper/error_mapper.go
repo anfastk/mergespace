@@ -119,6 +119,10 @@ var errorMap = map[error]errorMeta{
 		code:    connect.CodeNotFound,
 		message: "Signup context not found.",
 	},
+	errs.ErrUserInactive: {
+		code:    connect.CodePermissionDenied,
+		message: "Your account is inactive. Please contact support.",
+	},
 
 	// ---------------- OTP ----------------
 	errs.ErrOTPInvalid: {

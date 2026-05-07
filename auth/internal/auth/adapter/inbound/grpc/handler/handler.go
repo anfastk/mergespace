@@ -53,14 +53,14 @@ func (h *AuthHandler) InitiateSignup(ctx context.Context, req *connect.Request[a
 	}), nil
 }
 
-func (h *AuthHandler) VerifySignup(ctx context.Context, req *connect.Request[authv1.VerifySignupRequest]) (*connect.Response[authv1.VerifySignupResponse], error) {
+func (h *AuthHandler) VerifySignup(ctx context.Context, req *connect.Request[authv1.VerifySignupRequest]) (*connect.Response[authv1.AuthResponse], error) {
 	res, err := h.usecase.VerifySignup(ctx, mapper.ToVerifySignupDTO(req.Msg))
 	if err != nil {
 		log.Println(err)
 		return nil, mapper.MapDomainError(err)
 	}
 
-	response := connect.NewResponse(&authv1.VerifySignupResponse{
+	response := connect.NewResponse(&authv1.AuthResponse{
 		User: &authv1.UserRes{
 			Id:       res.User.ID,
 			Username: res.User.Username,
@@ -98,4 +98,33 @@ func (h *AuthHandler) ResendOTP(ctx context.Context, req *connect.Request[authv1
 		TempId:  res.TempID,
 		Message: res.Message,
 	}), nil
+}
+
+func (h *AuthHandler) Login(ctx context.Context, req *connect.Request[authv1.LoginRequest]) (*connect.Response[authv1.AuthResponse], error) {
+
+	res, err := h.usecase.Login(ctx, &dto.LoginRequest{
+		EmailOrUsername: req.Msg.EmailOrUsername,
+		Password:        req.Msg.Password,
+	})
+	if err != nil {
+		return nil, mapper.MapDomainError(err)
+	}
+
+	response := connect.NewResponse(&authv1.AuthResponse{
+		User: &authv1.UserRes{
+			Id:       res.User.ID,
+			Username: res.User.Username,
+			Email:    res.User.Email,
+			Status:   res.User.Status,
+		},
+		AccessToken:     res.AccessToken,
+		AccessExpiresAt: timestamppb.New(res.AccessExpiresAt),
+	})
+
+	response.Header().Add(
+		"Set-Cookie",
+		buildRefreshCookie(res.RefreshToken),
+	)
+
+	return response, nil
 }

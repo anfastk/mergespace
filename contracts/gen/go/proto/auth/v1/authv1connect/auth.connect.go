@@ -44,14 +44,17 @@ const (
 	AuthServiceVerifySignupProcedure = "/auth.v1.AuthService/VerifySignup"
 	// AuthServiceResendOTPProcedure is the fully-qualified name of the AuthService's ResendOTP RPC.
 	AuthServiceResendOTPProcedure = "/auth.v1.AuthService/ResendOTP"
+	// AuthServiceLoginProcedure is the fully-qualified name of the AuthService's Login RPC.
+	AuthServiceLoginProcedure = "/auth.v1.AuthService/Login"
 )
 
 // AuthServiceClient is a client for the auth.v1.AuthService service.
 type AuthServiceClient interface {
 	InitiateSignup(context.Context, *connect.Request[v1.InitiateSignupRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
 	CheckUsernameAvailability(context.Context, *connect.Request[v1.CheckUsernameRequest]) (*connect.Response[v1.CheckUsernameResponse], error)
-	VerifySignup(context.Context, *connect.Request[v1.VerifySignupRequest]) (*connect.Response[v1.VerifySignupResponse], error)
+	VerifySignup(context.Context, *connect.Request[v1.VerifySignupRequest]) (*connect.Response[v1.AuthResponse], error)
 	ResendOTP(context.Context, *connect.Request[v1.ResendOTPRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
+	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.AuthResponse], error)
 }
 
 // NewAuthServiceClient constructs a client for the auth.v1.AuthService service. By default, it uses
@@ -77,7 +80,7 @@ func NewAuthServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(authServiceMethods.ByName("CheckUsernameAvailability")),
 			connect.WithClientOptions(opts...),
 		),
-		verifySignup: connect.NewClient[v1.VerifySignupRequest, v1.VerifySignupResponse](
+		verifySignup: connect.NewClient[v1.VerifySignupRequest, v1.AuthResponse](
 			httpClient,
 			baseURL+AuthServiceVerifySignupProcedure,
 			connect.WithSchema(authServiceMethods.ByName("VerifySignup")),
@@ -89,6 +92,12 @@ func NewAuthServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(authServiceMethods.ByName("ResendOTP")),
 			connect.WithClientOptions(opts...),
 		),
+		login: connect.NewClient[v1.LoginRequest, v1.AuthResponse](
+			httpClient,
+			baseURL+AuthServiceLoginProcedure,
+			connect.WithSchema(authServiceMethods.ByName("Login")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -96,8 +105,9 @@ func NewAuthServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 type authServiceClient struct {
 	initiateSignup            *connect.Client[v1.InitiateSignupRequest, v1.InitiateSignupResponse]
 	checkUsernameAvailability *connect.Client[v1.CheckUsernameRequest, v1.CheckUsernameResponse]
-	verifySignup              *connect.Client[v1.VerifySignupRequest, v1.VerifySignupResponse]
+	verifySignup              *connect.Client[v1.VerifySignupRequest, v1.AuthResponse]
 	resendOTP                 *connect.Client[v1.ResendOTPRequest, v1.InitiateSignupResponse]
+	login                     *connect.Client[v1.LoginRequest, v1.AuthResponse]
 }
 
 // InitiateSignup calls auth.v1.AuthService.InitiateSignup.
@@ -111,7 +121,7 @@ func (c *authServiceClient) CheckUsernameAvailability(ctx context.Context, req *
 }
 
 // VerifySignup calls auth.v1.AuthService.VerifySignup.
-func (c *authServiceClient) VerifySignup(ctx context.Context, req *connect.Request[v1.VerifySignupRequest]) (*connect.Response[v1.VerifySignupResponse], error) {
+func (c *authServiceClient) VerifySignup(ctx context.Context, req *connect.Request[v1.VerifySignupRequest]) (*connect.Response[v1.AuthResponse], error) {
 	return c.verifySignup.CallUnary(ctx, req)
 }
 
@@ -120,12 +130,18 @@ func (c *authServiceClient) ResendOTP(ctx context.Context, req *connect.Request[
 	return c.resendOTP.CallUnary(ctx, req)
 }
 
+// Login calls auth.v1.AuthService.Login.
+func (c *authServiceClient) Login(ctx context.Context, req *connect.Request[v1.LoginRequest]) (*connect.Response[v1.AuthResponse], error) {
+	return c.login.CallUnary(ctx, req)
+}
+
 // AuthServiceHandler is an implementation of the auth.v1.AuthService service.
 type AuthServiceHandler interface {
 	InitiateSignup(context.Context, *connect.Request[v1.InitiateSignupRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
 	CheckUsernameAvailability(context.Context, *connect.Request[v1.CheckUsernameRequest]) (*connect.Response[v1.CheckUsernameResponse], error)
-	VerifySignup(context.Context, *connect.Request[v1.VerifySignupRequest]) (*connect.Response[v1.VerifySignupResponse], error)
+	VerifySignup(context.Context, *connect.Request[v1.VerifySignupRequest]) (*connect.Response[v1.AuthResponse], error)
 	ResendOTP(context.Context, *connect.Request[v1.ResendOTPRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
+	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.AuthResponse], error)
 }
 
 // NewAuthServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -159,6 +175,12 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(authServiceMethods.ByName("ResendOTP")),
 		connect.WithHandlerOptions(opts...),
 	)
+	authServiceLoginHandler := connect.NewUnaryHandler(
+		AuthServiceLoginProcedure,
+		svc.Login,
+		connect.WithSchema(authServiceMethods.ByName("Login")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/auth.v1.AuthService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AuthServiceInitiateSignupProcedure:
@@ -169,6 +191,8 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 			authServiceVerifySignupHandler.ServeHTTP(w, r)
 		case AuthServiceResendOTPProcedure:
 			authServiceResendOTPHandler.ServeHTTP(w, r)
+		case AuthServiceLoginProcedure:
+			authServiceLoginHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -186,10 +210,14 @@ func (UnimplementedAuthServiceHandler) CheckUsernameAvailability(context.Context
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.CheckUsernameAvailability is not implemented"))
 }
 
-func (UnimplementedAuthServiceHandler) VerifySignup(context.Context, *connect.Request[v1.VerifySignupRequest]) (*connect.Response[v1.VerifySignupResponse], error) {
+func (UnimplementedAuthServiceHandler) VerifySignup(context.Context, *connect.Request[v1.VerifySignupRequest]) (*connect.Response[v1.AuthResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.VerifySignup is not implemented"))
 }
 
 func (UnimplementedAuthServiceHandler) ResendOTP(context.Context, *connect.Request[v1.ResendOTPRequest]) (*connect.Response[v1.InitiateSignupResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.ResendOTP is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.AuthResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.Login is not implemented"))
 }
