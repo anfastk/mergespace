@@ -155,3 +155,15 @@ func (r *UserRepository) FindByEmailOrUsername(ctx context.Context, value string
 
 	return user, nil
 }
+
+func (r *UserRepository) UpdatePassword(ctx context.Context, userID string, hash string) error {
+
+	query := `
+	UPDATE users
+	SET password_hash = $1
+	WHERE id = $2
+	`
+
+	_, err := r.db.Exec(ctx, query, hash, userID)
+	return err
+}

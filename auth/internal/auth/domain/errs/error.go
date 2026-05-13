@@ -42,6 +42,7 @@ var (
 	ErrOTPInvalid     = errors.New("OTP_INVALID")
 	ErrOTPExpired     = errors.New("OTP_EXPIRED")
 	ErrOTPAlreadySent = errors.New("OTP_ALREADY_SENT")
+	ErrOTPNotVerified = errors.New("OTP_NOT_VERIFIED")
 
 	// System
 	ErrInternalServer  = errors.New("INTERNAL_SERVER_ERROR")

@@ -10,6 +10,7 @@ import (
 	"github.com/anfastk/mergespace/auth/internal/auth/application/dto"
 	"github.com/anfastk/mergespace/auth/internal/auth/application/port/inbound"
 	authv1 "github.com/anfastk/mergespace/contracts/gen/go/proto/auth/v1"
+	"google.golang.org/protobuf/types/known/emptypb"
 	"google.golang.org/protobuf/types/known/timestamppb"
 )
 
@@ -127,4 +128,69 @@ func (h *AuthHandler) Login(ctx context.Context, req *connect.Request[authv1.Log
 	)
 
 	return response, nil
+}
+
+func (h *AuthHandler) ForgotPassword(ctx context.Context, req *connect.Request[authv1.ForgotPasswordRequest]) (*connect.Response[authv1.InitiateSignupResponse], error) {
+
+	res, err := h.usecase.ForgotPasswordInitiate(ctx, &dto.ForgotPasswordRequest{
+		EmailOrUsername: req.Msg.EmailOrUsername,
+	})
+	if err != nil {
+		return nil, mapper.MapDomainError(err)
+	}
+
+	return connect.NewResponse(&authv1.InitiateSignupResponse{
+		TempId:  res.TempID,
+		Message: res.Message,
+	}), nil
+}
+
+func (h *AuthHandler) ResendForgotPasswordOTP(ctx context.Context, req *connect.Request[authv1.ResendForgotPasswordOTPRequest]) (*connect.Response[authv1.InitiateSignupResponse], error) {
+
+	res, err := h.usecase.ResendForgotPasswordOTP(
+		ctx,
+		&dto.ResendForgotPasswordOTPRequest{
+			ResetID: req.Msg.ResetId,
+		},
+	)
+	if err != nil {
+		return nil, mapper.MapDomainError(err)
+	}
+
+	return connect.NewResponse(&authv1.InitiateSignupResponse{
+		TempId:  res.TempID,
+		Message: res.Message,
+	}), nil
+}
+
+func (h *AuthHandler) VerifyForgotPasswordOTP(ctx context.Context, req *connect.Request[authv1.VerifyForgotPasswordOTPRequest]) (*connect.Response[emptypb.Empty], error) {
+
+	err := h.usecase.VerifyForgotPasswordOTP(
+		ctx,
+		&dto.VerifyForgotPasswordOTPRequest{
+			ResetID: req.Msg.ResetId,
+			OTP:     req.Msg.Otp,
+		},
+	)
+	if err != nil {
+		return nil, mapper.MapDomainError(err)
+	}
+
+	return connect.NewResponse(&emptypb.Empty{}), nil
+}
+
+func (h *AuthHandler) ResetPassword(ctx context.Context, req *connect.Request[authv1.ResetPasswordRequest]) (*connect.Response[emptypb.Empty], error) {
+
+	err := h.usecase.ResetPassword(
+		ctx,
+		&dto.ResetPasswordRequest{
+			ResetID:     req.Msg.ResetId,
+			NewPassword: req.Msg.NewPassword,
+		},
+	)
+	if err != nil {
+		return nil, mapper.MapDomainError(err)
+	}
+
+	return connect.NewResponse(&emptypb.Empty{}), nil
 }

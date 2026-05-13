@@ -74,6 +74,8 @@ func BuildApp() *App {
 		cfg.JWT.RefreshSecret,
 	)
 
+	passwordResetStore := redis.NewPasswordResetRedisStore(redisClient)
+
 	authService := usecase.NewAuthService(
 		db,
 		authRepo,
@@ -84,6 +86,7 @@ func BuildApp() *App {
 		producer,
 		outboxRepo,
 		tokenGen,
+		passwordResetStore,
 	)
 
 	handler := grpc.NewAuthHandler(authService)

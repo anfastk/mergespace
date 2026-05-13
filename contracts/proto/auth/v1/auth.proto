@@ -5,6 +5,7 @@ package auth.v1;
 option go_package = "github.com/anfastk/mergespace/contracts/gen/go/proto/auth/v1;authv1";
 
 import "google/protobuf/timestamp.proto";
+import "google/protobuf/empty.proto";
 
 message InitiateSignupRequest {
   string first_name = 1;
@@ -58,6 +59,24 @@ message LoginRequest {
   string password = 2;
 }
 
+message ForgotPasswordRequest {
+  string email_or_username = 1;
+}
+
+message ResendForgotPasswordOTPRequest {
+  string reset_id = 1;
+}
+
+message VerifyForgotPasswordOTPRequest {
+  string reset_id = 1;
+  string otp = 2;
+}
+
+message ResetPasswordRequest {
+  string reset_id = 1;
+  string new_password = 2;
+}
+
 service AuthService {
   rpc InitiateSignup(InitiateSignupRequest) returns (InitiateSignupResponse);
 
@@ -68,5 +87,10 @@ service AuthService {
   rpc ResendOTP(ResendOTPRequest) returns (InitiateSignupResponse);
 
   rpc Login(LoginRequest) returns (AuthResponse);
+
+  rpc ForgotPassword(ForgotPasswordRequest) returns (InitiateSignupResponse);
+  rpc ResendForgotPasswordOTP(ResendForgotPasswordOTPRequest) returns (InitiateSignupResponse);
+  rpc VerifyForgotPasswordOTP(VerifyForgotPasswordOTPRequest) returns (google.protobuf.Empty);
+  rpc ResetPassword(ResetPasswordRequest) returns (google.protobuf.Empty);
 
 }
