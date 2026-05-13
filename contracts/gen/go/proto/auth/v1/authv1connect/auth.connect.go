@@ -9,6 +9,7 @@ import (
 	context "context"
 	errors "errors"
 	v1 "github.com/anfastk/mergespace/contracts/gen/go/proto/auth/v1"
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
 	http "net/http"
 	strings "strings"
 )
@@ -46,6 +47,18 @@ const (
 	AuthServiceResendOTPProcedure = "/auth.v1.AuthService/ResendOTP"
 	// AuthServiceLoginProcedure is the fully-qualified name of the AuthService's Login RPC.
 	AuthServiceLoginProcedure = "/auth.v1.AuthService/Login"
+	// AuthServiceForgotPasswordProcedure is the fully-qualified name of the AuthService's
+	// ForgotPassword RPC.
+	AuthServiceForgotPasswordProcedure = "/auth.v1.AuthService/ForgotPassword"
+	// AuthServiceResendForgotPasswordOTPProcedure is the fully-qualified name of the AuthService's
+	// ResendForgotPasswordOTP RPC.
+	AuthServiceResendForgotPasswordOTPProcedure = "/auth.v1.AuthService/ResendForgotPasswordOTP"
+	// AuthServiceVerifyForgotPasswordOTPProcedure is the fully-qualified name of the AuthService's
+	// VerifyForgotPasswordOTP RPC.
+	AuthServiceVerifyForgotPasswordOTPProcedure = "/auth.v1.AuthService/VerifyForgotPasswordOTP"
+	// AuthServiceResetPasswordProcedure is the fully-qualified name of the AuthService's ResetPassword
+	// RPC.
+	AuthServiceResetPasswordProcedure = "/auth.v1.AuthService/ResetPassword"
 )
 
 // AuthServiceClient is a client for the auth.v1.AuthService service.
@@ -55,6 +68,10 @@ type AuthServiceClient interface {
 	VerifySignup(context.Context, *connect.Request[v1.VerifySignupRequest]) (*connect.Response[v1.AuthResponse], error)
 	ResendOTP(context.Context, *connect.Request[v1.ResendOTPRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.AuthResponse], error)
+	ForgotPassword(context.Context, *connect.Request[v1.ForgotPasswordRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
+	ResendForgotPasswordOTP(context.Context, *connect.Request[v1.ResendForgotPasswordOTPRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
+	VerifyForgotPasswordOTP(context.Context, *connect.Request[v1.VerifyForgotPasswordOTPRequest]) (*connect.Response[emptypb.Empty], error)
+	ResetPassword(context.Context, *connect.Request[v1.ResetPasswordRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewAuthServiceClient constructs a client for the auth.v1.AuthService service. By default, it uses
@@ -98,6 +115,30 @@ func NewAuthServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(authServiceMethods.ByName("Login")),
 			connect.WithClientOptions(opts...),
 		),
+		forgotPassword: connect.NewClient[v1.ForgotPasswordRequest, v1.InitiateSignupResponse](
+			httpClient,
+			baseURL+AuthServiceForgotPasswordProcedure,
+			connect.WithSchema(authServiceMethods.ByName("ForgotPassword")),
+			connect.WithClientOptions(opts...),
+		),
+		resendForgotPasswordOTP: connect.NewClient[v1.ResendForgotPasswordOTPRequest, v1.InitiateSignupResponse](
+			httpClient,
+			baseURL+AuthServiceResendForgotPasswordOTPProcedure,
+			connect.WithSchema(authServiceMethods.ByName("ResendForgotPasswordOTP")),
+			connect.WithClientOptions(opts...),
+		),
+		verifyForgotPasswordOTP: connect.NewClient[v1.VerifyForgotPasswordOTPRequest, emptypb.Empty](
+			httpClient,
+			baseURL+AuthServiceVerifyForgotPasswordOTPProcedure,
+			connect.WithSchema(authServiceMethods.ByName("VerifyForgotPasswordOTP")),
+			connect.WithClientOptions(opts...),
+		),
+		resetPassword: connect.NewClient[v1.ResetPasswordRequest, emptypb.Empty](
+			httpClient,
+			baseURL+AuthServiceResetPasswordProcedure,
+			connect.WithSchema(authServiceMethods.ByName("ResetPassword")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
@@ -108,6 +149,10 @@ type authServiceClient struct {
 	verifySignup              *connect.Client[v1.VerifySignupRequest, v1.AuthResponse]
 	resendOTP                 *connect.Client[v1.ResendOTPRequest, v1.InitiateSignupResponse]
 	login                     *connect.Client[v1.LoginRequest, v1.AuthResponse]
+	forgotPassword            *connect.Client[v1.ForgotPasswordRequest, v1.InitiateSignupResponse]
+	resendForgotPasswordOTP   *connect.Client[v1.ResendForgotPasswordOTPRequest, v1.InitiateSignupResponse]
+	verifyForgotPasswordOTP   *connect.Client[v1.VerifyForgotPasswordOTPRequest, emptypb.Empty]
+	resetPassword             *connect.Client[v1.ResetPasswordRequest, emptypb.Empty]
 }
 
 // InitiateSignup calls auth.v1.AuthService.InitiateSignup.
@@ -135,6 +180,26 @@ func (c *authServiceClient) Login(ctx context.Context, req *connect.Request[v1.L
 	return c.login.CallUnary(ctx, req)
 }
 
+// ForgotPassword calls auth.v1.AuthService.ForgotPassword.
+func (c *authServiceClient) ForgotPassword(ctx context.Context, req *connect.Request[v1.ForgotPasswordRequest]) (*connect.Response[v1.InitiateSignupResponse], error) {
+	return c.forgotPassword.CallUnary(ctx, req)
+}
+
+// ResendForgotPasswordOTP calls auth.v1.AuthService.ResendForgotPasswordOTP.
+func (c *authServiceClient) ResendForgotPasswordOTP(ctx context.Context, req *connect.Request[v1.ResendForgotPasswordOTPRequest]) (*connect.Response[v1.InitiateSignupResponse], error) {
+	return c.resendForgotPasswordOTP.CallUnary(ctx, req)
+}
+
+// VerifyForgotPasswordOTP calls auth.v1.AuthService.VerifyForgotPasswordOTP.
+func (c *authServiceClient) VerifyForgotPasswordOTP(ctx context.Context, req *connect.Request[v1.VerifyForgotPasswordOTPRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.verifyForgotPasswordOTP.CallUnary(ctx, req)
+}
+
+// ResetPassword calls auth.v1.AuthService.ResetPassword.
+func (c *authServiceClient) ResetPassword(ctx context.Context, req *connect.Request[v1.ResetPasswordRequest]) (*connect.Response[emptypb.Empty], error) {
+	return c.resetPassword.CallUnary(ctx, req)
+}
+
 // AuthServiceHandler is an implementation of the auth.v1.AuthService service.
 type AuthServiceHandler interface {
 	InitiateSignup(context.Context, *connect.Request[v1.InitiateSignupRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
@@ -142,6 +207,10 @@ type AuthServiceHandler interface {
 	VerifySignup(context.Context, *connect.Request[v1.VerifySignupRequest]) (*connect.Response[v1.AuthResponse], error)
 	ResendOTP(context.Context, *connect.Request[v1.ResendOTPRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.AuthResponse], error)
+	ForgotPassword(context.Context, *connect.Request[v1.ForgotPasswordRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
+	ResendForgotPasswordOTP(context.Context, *connect.Request[v1.ResendForgotPasswordOTPRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
+	VerifyForgotPasswordOTP(context.Context, *connect.Request[v1.VerifyForgotPasswordOTPRequest]) (*connect.Response[emptypb.Empty], error)
+	ResetPassword(context.Context, *connect.Request[v1.ResetPasswordRequest]) (*connect.Response[emptypb.Empty], error)
 }
 
 // NewAuthServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -181,6 +250,30 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(authServiceMethods.ByName("Login")),
 		connect.WithHandlerOptions(opts...),
 	)
+	authServiceForgotPasswordHandler := connect.NewUnaryHandler(
+		AuthServiceForgotPasswordProcedure,
+		svc.ForgotPassword,
+		connect.WithSchema(authServiceMethods.ByName("ForgotPassword")),
+		connect.WithHandlerOptions(opts...),
+	)
+	authServiceResendForgotPasswordOTPHandler := connect.NewUnaryHandler(
+		AuthServiceResendForgotPasswordOTPProcedure,
+		svc.ResendForgotPasswordOTP,
+		connect.WithSchema(authServiceMethods.ByName("ResendForgotPasswordOTP")),
+		connect.WithHandlerOptions(opts...),
+	)
+	authServiceVerifyForgotPasswordOTPHandler := connect.NewUnaryHandler(
+		AuthServiceVerifyForgotPasswordOTPProcedure,
+		svc.VerifyForgotPasswordOTP,
+		connect.WithSchema(authServiceMethods.ByName("VerifyForgotPasswordOTP")),
+		connect.WithHandlerOptions(opts...),
+	)
+	authServiceResetPasswordHandler := connect.NewUnaryHandler(
+		AuthServiceResetPasswordProcedure,
+		svc.ResetPassword,
+		connect.WithSchema(authServiceMethods.ByName("ResetPassword")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/auth.v1.AuthService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
 		case AuthServiceInitiateSignupProcedure:
@@ -193,6 +286,14 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 			authServiceResendOTPHandler.ServeHTTP(w, r)
 		case AuthServiceLoginProcedure:
 			authServiceLoginHandler.ServeHTTP(w, r)
+		case AuthServiceForgotPasswordProcedure:
+			authServiceForgotPasswordHandler.ServeHTTP(w, r)
+		case AuthServiceResendForgotPasswordOTPProcedure:
+			authServiceResendForgotPasswordOTPHandler.ServeHTTP(w, r)
+		case AuthServiceVerifyForgotPasswordOTPProcedure:
+			authServiceVerifyForgotPasswordOTPHandler.ServeHTTP(w, r)
+		case AuthServiceResetPasswordProcedure:
+			authServiceResetPasswordHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -220,4 +321,20 @@ func (UnimplementedAuthServiceHandler) ResendOTP(context.Context, *connect.Reque
 
 func (UnimplementedAuthServiceHandler) Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.AuthResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.Login is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) ForgotPassword(context.Context, *connect.Request[v1.ForgotPasswordRequest]) (*connect.Response[v1.InitiateSignupResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.ForgotPassword is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) ResendForgotPasswordOTP(context.Context, *connect.Request[v1.ResendForgotPasswordOTPRequest]) (*connect.Response[v1.InitiateSignupResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.ResendForgotPasswordOTP is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) VerifyForgotPasswordOTP(context.Context, *connect.Request[v1.VerifyForgotPasswordOTPRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.VerifyForgotPasswordOTP is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) ResetPassword(context.Context, *connect.Request[v1.ResetPasswordRequest]) (*connect.Response[emptypb.Empty], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.ResetPassword is not implemented"))
 }

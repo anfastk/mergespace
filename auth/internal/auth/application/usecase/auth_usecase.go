@@ -22,28 +22,30 @@ import (
 var _ inbound.AuthUseCase = (*AuthService)(nil)
 
 type AuthService struct {
-	db             *pgxpool.Pool
-	userRepo       outbound.UserRepository
-	otpGen         outbound.OTPGenerator
-	idGen          outbound.IDGenerator
-	signupCtxStore outbound.SignupContextStore
-	passwordHasher outbound.PasswordHasher
-	eventProducer  outbound.EventProducer
-	outboxRepo     outbound.OutboxRepository
-	tokenGenerator outbound.TokenGenerator
+	db                 *pgxpool.Pool
+	userRepo           outbound.UserRepository
+	otpGen             outbound.OTPGenerator
+	idGen              outbound.IDGenerator
+	signupCtxStore     outbound.SignupContextStore
+	passwordHasher     outbound.PasswordHasher
+	eventProducer      outbound.EventProducer
+	outboxRepo         outbound.OutboxRepository
+	tokenGenerator     outbound.TokenGenerator
+	passwordResetStore outbound.PasswordResetStore
 }
 
-func NewAuthService(db *pgxpool.Pool, user outbound.UserRepository, otpGen outbound.OTPGenerator, idGen outbound.IDGenerator, signupCtxStore outbound.SignupContextStore, passwordHasher outbound.PasswordHasher, producer outbound.EventProducer, outboxRepo outbound.OutboxRepository, tokenGen outbound.TokenGenerator) *AuthService {
+func NewAuthService(db *pgxpool.Pool, user outbound.UserRepository, otpGen outbound.OTPGenerator, idGen outbound.IDGenerator, signupCtxStore outbound.SignupContextStore, passwordHasher outbound.PasswordHasher, producer outbound.EventProducer, outboxRepo outbound.OutboxRepository, tokenGen outbound.TokenGenerator, passwordResetStore outbound.PasswordResetStore) *AuthService {
 	return &AuthService{
-		db:             db,
-		userRepo:       user,
-		otpGen:         otpGen,
-		idGen:          idGen,
-		signupCtxStore: signupCtxStore,
-		passwordHasher: passwordHasher,
-		eventProducer:  producer,
-		outboxRepo:     outboxRepo,
-		tokenGenerator: tokenGen,
+		db:                 db,
+		userRepo:           user,
+		otpGen:             otpGen,
+		idGen:              idGen,
+		signupCtxStore:     signupCtxStore,
+		passwordHasher:     passwordHasher,
+		eventProducer:      producer,
+		outboxRepo:         outboxRepo,
+		tokenGenerator:     tokenGen,
+		passwordResetStore: passwordResetStore,
 	}
 }
 
@@ -515,5 +517,239 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.Au
 		AccessToken:     accessToken,
 		RefreshToken:    refreshToken,
 		AccessExpiresAt: accessExpiry,
+	}, nil
+}
+
+func (s *AuthService) ForgotPasswordInitiate(ctx context.Context, req *dto.ForgotPasswordRequest) (*dto.InitiateSignUpResponce, error) {
+
+	user, err := s.userRepo.FindByEmailOrUsername(ctx, req.EmailOrUsername)
+
+	// silent success
+	if err != nil {
+		return &dto.InitiateSignUpResponce{
+			Message: "If account exists, OTP has been sent.",
+		}, nil
+	}
+
+	otp, err := s.otpGen.Generate(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	resetID := entity.PasswordResetContextID(s.idGen.NewID(ctx))
+
+	reset := &entity.PasswordResetContext{
+		ID:          resetID,
+		UserID:      user.UserID.String(),
+		Email:       user.Email.String(),
+		OTP:         otp,
+		OTPVerified: false,
+	}
+
+	if err := s.passwordResetStore.Save(ctx, reset); err != nil {
+		return nil, err
+	}
+
+	payload, _ := json.Marshal(map[string]string{
+		"email": user.Email.String(),
+		"otp":   otp,
+	})
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	outbox := &entity.OutboxEvent{
+		ID:        s.idGen.NewID(ctx),
+		EventType: "SendOTP",
+		Payload:   payload,
+		Status:    "pending",
+	}
+
+	if err := s.outboxRepo.Save(ctx, tx, outbox); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	return &dto.InitiateSignUpResponce{
+		TempID:  string(resetID),
+		Message: "If account exists, OTP has been sent.",
+	}, nil
+}
+
+func (s *AuthService) VerifyForgotPasswordOTP(ctx context.Context, req *dto.VerifyForgotPasswordOTPRequest) error {
+
+	reset, err := s.passwordResetStore.FindByID(
+		ctx,
+		entity.PasswordResetContextID(req.ResetID),
+	)
+	if err != nil {
+		return err
+	}
+
+	if reset == nil {
+		return errs.ErrSignupContextNotFound
+	}
+
+	attempts, err := s.passwordResetStore.GetAttempts(ctx, reset.ID)
+	if err != nil {
+		return err
+	}
+
+	if attempts >= 5 {
+		return errs.ErrTooManyAttempts
+	}
+
+	if reset.OTP != req.OTP {
+
+		if err := s.passwordResetStore.IncrementAttempts(
+			ctx,
+			reset.ID,
+			10*time.Minute,
+		); err != nil {
+			log.Println(err)
+		}
+
+		return errs.ErrOTPInvalid
+	}
+
+	reset.OTPVerified = true
+
+	if err := s.passwordResetStore.Update(ctx, reset); err != nil {
+		return err
+	}
+
+	if err := s.passwordResetStore.DeleteAttempts(ctx, reset.ID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *AuthService) ResetPassword(ctx context.Context, req *dto.ResetPasswordRequest) error {
+
+	reset, err := s.passwordResetStore.FindByID(
+		ctx,
+		entity.PasswordResetContextID(req.ResetID),
+	)
+	if err != nil {
+		return err
+	}
+
+	if reset == nil {
+		return errs.ErrSignupContextNotFound
+	}
+
+	if !reset.OTPVerified {
+		return errs.ErrOTPInvalid
+	}
+
+	password, err := valueobject.NewPassword(req.NewPassword)
+	if err != nil {
+		return errs.ErrInvalidPassword
+	}
+
+	hash, err := s.passwordHasher.Hash(password.String())
+	if err != nil {
+		return err
+	}
+
+	if err := s.userRepo.UpdatePassword(
+		ctx,
+		reset.UserID,
+		string(hash),
+	); err != nil {
+		return err
+	}
+
+	if err := s.passwordResetStore.Delete(ctx, reset.ID); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *AuthService) ResendForgotPasswordOTP(ctx context.Context, req *dto.ResendForgotPasswordOTPRequest) (*dto.InitiateSignUpResponce, error) {
+
+	reset, err := s.passwordResetStore.FindByID(
+		ctx,
+		entity.PasswordResetContextID(req.ResetID),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	if reset == nil {
+		return nil, errs.ErrSignupContextNotFound
+	}
+
+	// cooldown check
+	lastSentAt, err := s.passwordResetStore.GetLastOTPSentAt(
+		ctx,
+		reset.ID,
+	)
+
+	if err == nil {
+		if time.Since(lastSentAt) < 60*time.Second {
+			return nil, errs.ErrTooManyRequests
+		}
+	}
+
+	otp, err := s.otpGen.Generate(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	reset.OTP = otp
+
+	if err := s.passwordResetStore.Update(ctx, reset); err != nil {
+		return nil, err
+	}
+
+	if err := s.passwordResetStore.SetLastOTPSentAt(
+		ctx,
+		reset.ID,
+		time.Now(),
+	); err != nil {
+		log.Println("failed to update resend timestamp:", err)
+	}
+
+	payload, err := json.Marshal(map[string]string{
+		"email": reset.Email,
+		"otp":   otp,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	tx, err := s.db.Begin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer tx.Rollback(ctx)
+
+	outbox := &entity.OutboxEvent{
+		ID:        s.idGen.NewID(ctx),
+		EventType: "SendOTP",
+		Payload:   payload,
+		Status:    "pending",
+	}
+
+	if err := s.outboxRepo.Save(ctx, tx, outbox); err != nil {
+		return nil, err
+	}
+
+	if err := tx.Commit(ctx); err != nil {
+		return nil, err
+	}
+
+	return &dto.InitiateSignUpResponce{
+		TempID:  string(reset.ID),
+		Message: "OTP resent successfully",
 	}, nil
 }
