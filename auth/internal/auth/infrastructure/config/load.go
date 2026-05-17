@@ -45,5 +45,10 @@ func Load() (*Config, error) {
 			AccessSecret:  os.Getenv("JWT_ACCESS_SECRET"),
 			RefreshSecret: os.Getenv("JWT_REFRESH_SECRET"),
 		},
+		Google: GoogleConfig{
+			ClientID:     os.Getenv("GOOGLE_CLIENT_ID"),
+			ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
+			RedirectURL:  os.Getenv("GOOGLE_REDIRECT_URL"),
+		},
 	}, nil
 }

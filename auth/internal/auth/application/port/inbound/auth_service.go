@@ -19,4 +19,6 @@ type AuthUseCase interface {
 	ResendForgotPasswordOTP(ctx context.Context, req *dto.ResendForgotPasswordOTPRequest) (*dto.InitiateSignUpResponce, error)
 	VerifyForgotPasswordOTP(ctx context.Context, req *dto.VerifyForgotPasswordOTPRequest) error
 	ResetPassword(ctx context.Context, req *dto.ResetPasswordRequest) error
+
+	GoogleLogin(ctx context.Context, code string) (*dto.AuthResponse, error)
 }

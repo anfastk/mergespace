@@ -15,14 +15,6 @@ const (
 	UserStatusDeleted   UserStatus = "deleted"
 )
 
-type AuthProvider string
-
-const (
-	AuthProviderLocal  AuthProvider = "email"
-	AuthProviderGoogle AuthProvider = "google"
-	AuthProviderGithub AuthProvider = "github"
-)
-
 type User struct {
 	UserID              valueobject.UserID
 	Username            valueobject.Username
@@ -32,12 +24,22 @@ type User struct {
 	DeletionScheduledAt *time.Time
 }
 
-func NewLocalUser(id valueobject.UserID, email valueobject.Email, username valueobject.Username, password string) *User {
+func NewLocalUser(id valueobject.UserID, email valueobject.Email, username valueobject.Username, password *string) *User {
 	return &User{
 		UserID:   id,
 		Email:    email,
 		Username: username,
-		Password: &password,
+		Password: password,
+		Status:   UserStatusActive,
+	}
+}
+
+func NewOAuthUser(id valueobject.UserID, email valueobject.Email, username valueobject.Username) *User {
+	return &User{
+		UserID:   id,
+		Email:    email,
+		Username: username,
+		Password: nil,
 		Status:   UserStatusActive,
 	}
 }
