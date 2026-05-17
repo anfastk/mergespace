@@ -32,9 +32,11 @@ type AuthService struct {
 	outboxRepo         outbound.OutboxRepository
 	tokenGenerator     outbound.TokenGenerator
 	passwordResetStore outbound.PasswordResetStore
+	oauthProvider      outbound.OAuthProvider
+	authIdentityRepo   outbound.AuthIdentityRepository
 }
 
-func NewAuthService(db *pgxpool.Pool, user outbound.UserRepository, otpGen outbound.OTPGenerator, idGen outbound.IDGenerator, signupCtxStore outbound.SignupContextStore, passwordHasher outbound.PasswordHasher, producer outbound.EventProducer, outboxRepo outbound.OutboxRepository, tokenGen outbound.TokenGenerator, passwordResetStore outbound.PasswordResetStore) *AuthService {
+func NewAuthService(db *pgxpool.Pool, user outbound.UserRepository, otpGen outbound.OTPGenerator, idGen outbound.IDGenerator, signupCtxStore outbound.SignupContextStore, passwordHasher outbound.PasswordHasher, producer outbound.EventProducer, outboxRepo outbound.OutboxRepository, tokenGen outbound.TokenGenerator, passwordResetStore outbound.PasswordResetStore, oauthProvider outbound.OAuthProvider, authIdentityRepo outbound.AuthIdentityRepository) *AuthService {
 	return &AuthService{
 		db:                 db,
 		userRepo:           user,
@@ -46,6 +48,8 @@ func NewAuthService(db *pgxpool.Pool, user outbound.UserRepository, otpGen outbo
 		outboxRepo:         outboxRepo,
 		tokenGenerator:     tokenGen,
 		passwordResetStore: passwordResetStore,
+		oauthProvider:      oauthProvider,
+		authIdentityRepo:   authIdentityRepo,
 	}
 }
 
@@ -292,7 +296,7 @@ func (s *AuthService) VerifySignup(ctx context.Context, req *dto.VerifySignupReq
 		userID,
 		email,
 		username,
-		signupCtx.PasswordHash,
+		&signupCtx.PasswordHash,
 	)
 
 	tx, err := s.db.Begin(ctx)
@@ -480,6 +484,10 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.Au
 	)
 	if err != nil {
 		return nil, err
+	}
+
+	if user.Password == nil {
+		return nil, errs.ErrInvalidCredentials
 	}
 
 	if err := s.passwordHasher.Compare(

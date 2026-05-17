@@ -5,29 +5,41 @@ import (
 	"log"
 	"net/http"
 
-	"golang.org/x/net/http2"
-	"golang.org/x/net/http2/h2c"
+	"github.com/go-chi/chi/v5"
 
+	httpOAuth "github.com/anfastk/mergespace/auth/internal/auth/adapter/inbound/http/oauth"
 	"github.com/anfastk/mergespace/auth/internal/auth/infrastructure/di"
 	"github.com/anfastk/mergespace/contracts/gen/go/proto/auth/v1/authv1connect"
 )
 
 func main() {
+
 	app := di.BuildApp()
 
 	go app.Worker.Start(context.Background())
 
-	mux := http.NewServeMux()
+	r := chi.NewRouter()
 
-	path, h := authv1connect.NewAuthServiceHandler(app.Handler)
-	log.Println("Registered Connect path:", path)
-	mux.Handle(path, h)
+	// ConnectRPC
+	_, handler := authv1connect.NewAuthServiceHandler(app.Handler)
 
-	log.Println("Auth Service (Connect) running on :8080")
+	// 🔥 IMPORTANT
+	r.Mount("/", handler)
+
+	// OAuth
+	googleHandler := httpOAuth.NewGoogleHandler(
+		app.HandlerUsecase,
+		app.GoogleProvider,
+	)
+
+	r.Get("/auth/google/login", googleHandler.Login)
+	r.Get("/auth/google/callback", googleHandler.Callback)
+
+	log.Println("Auth Service running on :8080")
 
 	if err := http.ListenAndServe(
 		":8080",
-		h2c.NewHandler(mux, &http2.Server{}),
+		r,
 	); err != nil {
 		log.Fatal(err)
 	}

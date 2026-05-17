@@ -6,11 +6,13 @@ import (
 	grpc "github.com/anfastk/mergespace/auth/internal/auth/adapter/inbound/grpc/handler"
 	"github.com/anfastk/mergespace/auth/internal/auth/adapter/outbound/idgen"
 	"github.com/anfastk/mergespace/auth/internal/auth/adapter/outbound/kafka"
+	"github.com/anfastk/mergespace/auth/internal/auth/adapter/outbound/oauth"
 	"github.com/anfastk/mergespace/auth/internal/auth/adapter/outbound/otp"
 	"github.com/anfastk/mergespace/auth/internal/auth/adapter/outbound/postgres"
 	"github.com/anfastk/mergespace/auth/internal/auth/adapter/outbound/redis"
 	"github.com/anfastk/mergespace/auth/internal/auth/adapter/outbound/token"
 	"github.com/anfastk/mergespace/auth/internal/auth/adapter/outbound/worker"
+	"github.com/anfastk/mergespace/auth/internal/auth/application/port/inbound"
 	"github.com/anfastk/mergespace/auth/internal/auth/application/usecase"
 	"github.com/anfastk/mergespace/auth/internal/auth/infrastructure/config"
 	"github.com/anfastk/mergespace/auth/internal/auth/infrastructure/crypto"
@@ -23,7 +25,11 @@ import (
 
 type App struct {
 	Handler *grpc.AuthHandler
-	Worker  *worker.OutboxWorker
+
+	HandlerUsecase inbound.AuthUseCase
+	GoogleProvider *oauth.GoogleOAuthProvider
+
+	Worker *worker.OutboxWorker
 }
 
 func BuildApp() *App {
@@ -74,6 +80,14 @@ func BuildApp() *App {
 		cfg.JWT.RefreshSecret,
 	)
 
+	googleProvider := oauth.NewGoogleOAuthProvider(
+		cfg.Google.ClientID,
+		cfg.Google.ClientSecret,
+		cfg.Google.RedirectURL,
+	)
+
+	authIdentityRepo := postgres.NewAuthIdentityRepository(db)
+
 	passwordResetStore := redis.NewPasswordResetRedisStore(redisClient)
 
 	authService := usecase.NewAuthService(
@@ -87,6 +101,8 @@ func BuildApp() *App {
 		outboxRepo,
 		tokenGen,
 		passwordResetStore,
+		googleProvider,
+		authIdentityRepo,
 	)
 
 	handler := grpc.NewAuthHandler(authService)
@@ -94,7 +110,9 @@ func BuildApp() *App {
 	outboxWorker := worker.NewOutboxWorker(outboxRepo, producer)
 
 	return &App{
-		Handler: handler,
-		Worker:  outboxWorker,
+		Handler:        handler,
+		HandlerUsecase: authService,
+		GoogleProvider: googleProvider,
+		Worker:         outboxWorker,
 	}
 }

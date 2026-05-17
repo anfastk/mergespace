@@ -110,7 +110,7 @@ func (r *UserRepository) FindByEmailOrUsername(ctx context.Context, value string
 		id           string
 		email        string
 		username     string
-		passwordHash string
+		passwordHash *string
 		status       string
 	)
 
@@ -166,4 +166,67 @@ func (r *UserRepository) UpdatePassword(ctx context.Context, userID string, hash
 
 	_, err := r.db.Exec(ctx, query, hash, userID)
 	return err
+}
+
+func (r *UserRepository) FindByID(
+	ctx context.Context,
+	id string,
+) (*entity.User, error) {
+
+	query := `
+	SELECT id, email, username, password_hash, status
+	FROM users
+	WHERE id = $1
+	LIMIT 1
+	`
+
+	row := r.db.QueryRow(ctx, query, id)
+
+	var (
+		userID       string
+		email        string
+		username     string
+		passwordHash *string
+		status       string
+	)
+
+	err := row.Scan(
+		&userID,
+		&email,
+		&username,
+		&passwordHash,
+		&status,
+	)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return nil, errs.ErrUserNotFound
+		}
+		return nil, err
+	}
+
+	uid, err := valueobject.NewUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	userEmail, err := valueobject.NewEmail(email)
+	if err != nil {
+		return nil, err
+	}
+
+	userUsername, err := valueobject.NewUsername(username)
+	if err != nil {
+		return nil, err
+	}
+
+	user := entity.NewLocalUser(
+		uid,
+		userEmail,
+		userUsername,
+		passwordHash,
+	)
+
+	user.Status = entity.UserStatus(status)
+
+	return user, nil
 }
