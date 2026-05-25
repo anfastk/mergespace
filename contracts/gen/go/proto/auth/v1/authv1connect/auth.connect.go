@@ -34,12 +34,12 @@ const (
 // reflection-formatted method names, remove the leading slash and convert the remaining slash to a
 // period.
 const (
-	// AuthServiceInitiateSignupProcedure is the fully-qualified name of the AuthService's
-	// InitiateSignup RPC.
-	AuthServiceInitiateSignupProcedure = "/auth.v1.AuthService/InitiateSignup"
 	// AuthServiceCheckUsernameAvailabilityProcedure is the fully-qualified name of the AuthService's
 	// CheckUsernameAvailability RPC.
 	AuthServiceCheckUsernameAvailabilityProcedure = "/auth.v1.AuthService/CheckUsernameAvailability"
+	// AuthServiceInitiateSignupProcedure is the fully-qualified name of the AuthService's
+	// InitiateSignup RPC.
+	AuthServiceInitiateSignupProcedure = "/auth.v1.AuthService/InitiateSignup"
 	// AuthServiceVerifySignupProcedure is the fully-qualified name of the AuthService's VerifySignup
 	// RPC.
 	AuthServiceVerifySignupProcedure = "/auth.v1.AuthService/VerifySignup"
@@ -59,12 +59,17 @@ const (
 	// AuthServiceResetPasswordProcedure is the fully-qualified name of the AuthService's ResetPassword
 	// RPC.
 	AuthServiceResetPasswordProcedure = "/auth.v1.AuthService/ResetPassword"
+	// AuthServiceRefreshTokenProcedure is the fully-qualified name of the AuthService's RefreshToken
+	// RPC.
+	AuthServiceRefreshTokenProcedure = "/auth.v1.AuthService/RefreshToken"
+	// AuthServiceLogoutProcedure is the fully-qualified name of the AuthService's Logout RPC.
+	AuthServiceLogoutProcedure = "/auth.v1.AuthService/Logout"
 )
 
 // AuthServiceClient is a client for the auth.v1.AuthService service.
 type AuthServiceClient interface {
-	InitiateSignup(context.Context, *connect.Request[v1.InitiateSignupRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
 	CheckUsernameAvailability(context.Context, *connect.Request[v1.CheckUsernameRequest]) (*connect.Response[v1.CheckUsernameResponse], error)
+	InitiateSignup(context.Context, *connect.Request[v1.InitiateSignupRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
 	VerifySignup(context.Context, *connect.Request[v1.VerifySignupRequest]) (*connect.Response[v1.AuthResponse], error)
 	ResendOTP(context.Context, *connect.Request[v1.ResendOTPRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.AuthResponse], error)
@@ -72,6 +77,8 @@ type AuthServiceClient interface {
 	ResendForgotPasswordOTP(context.Context, *connect.Request[v1.ResendForgotPasswordOTPRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
 	VerifyForgotPasswordOTP(context.Context, *connect.Request[v1.VerifyForgotPasswordOTPRequest]) (*connect.Response[emptypb.Empty], error)
 	ResetPassword(context.Context, *connect.Request[v1.ResetPasswordRequest]) (*connect.Response[emptypb.Empty], error)
+	RefreshToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.AuthResponse], error)
+	Logout(context.Context, *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error)
 }
 
 // NewAuthServiceClient constructs a client for the auth.v1.AuthService service. By default, it uses
@@ -85,16 +92,16 @@ func NewAuthServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 	baseURL = strings.TrimRight(baseURL, "/")
 	authServiceMethods := v1.File_proto_auth_v1_auth_proto.Services().ByName("AuthService").Methods()
 	return &authServiceClient{
-		initiateSignup: connect.NewClient[v1.InitiateSignupRequest, v1.InitiateSignupResponse](
-			httpClient,
-			baseURL+AuthServiceInitiateSignupProcedure,
-			connect.WithSchema(authServiceMethods.ByName("InitiateSignup")),
-			connect.WithClientOptions(opts...),
-		),
 		checkUsernameAvailability: connect.NewClient[v1.CheckUsernameRequest, v1.CheckUsernameResponse](
 			httpClient,
 			baseURL+AuthServiceCheckUsernameAvailabilityProcedure,
 			connect.WithSchema(authServiceMethods.ByName("CheckUsernameAvailability")),
+			connect.WithClientOptions(opts...),
+		),
+		initiateSignup: connect.NewClient[v1.InitiateSignupRequest, v1.InitiateSignupResponse](
+			httpClient,
+			baseURL+AuthServiceInitiateSignupProcedure,
+			connect.WithSchema(authServiceMethods.ByName("InitiateSignup")),
 			connect.WithClientOptions(opts...),
 		),
 		verifySignup: connect.NewClient[v1.VerifySignupRequest, v1.AuthResponse](
@@ -139,13 +146,25 @@ func NewAuthServiceClient(httpClient connect.HTTPClient, baseURL string, opts ..
 			connect.WithSchema(authServiceMethods.ByName("ResetPassword")),
 			connect.WithClientOptions(opts...),
 		),
+		refreshToken: connect.NewClient[emptypb.Empty, v1.AuthResponse](
+			httpClient,
+			baseURL+AuthServiceRefreshTokenProcedure,
+			connect.WithSchema(authServiceMethods.ByName("RefreshToken")),
+			connect.WithClientOptions(opts...),
+		),
+		logout: connect.NewClient[v1.LogoutRequest, v1.LogoutResponse](
+			httpClient,
+			baseURL+AuthServiceLogoutProcedure,
+			connect.WithSchema(authServiceMethods.ByName("Logout")),
+			connect.WithClientOptions(opts...),
+		),
 	}
 }
 
 // authServiceClient implements AuthServiceClient.
 type authServiceClient struct {
-	initiateSignup            *connect.Client[v1.InitiateSignupRequest, v1.InitiateSignupResponse]
 	checkUsernameAvailability *connect.Client[v1.CheckUsernameRequest, v1.CheckUsernameResponse]
+	initiateSignup            *connect.Client[v1.InitiateSignupRequest, v1.InitiateSignupResponse]
 	verifySignup              *connect.Client[v1.VerifySignupRequest, v1.AuthResponse]
 	resendOTP                 *connect.Client[v1.ResendOTPRequest, v1.InitiateSignupResponse]
 	login                     *connect.Client[v1.LoginRequest, v1.AuthResponse]
@@ -153,16 +172,18 @@ type authServiceClient struct {
 	resendForgotPasswordOTP   *connect.Client[v1.ResendForgotPasswordOTPRequest, v1.InitiateSignupResponse]
 	verifyForgotPasswordOTP   *connect.Client[v1.VerifyForgotPasswordOTPRequest, emptypb.Empty]
 	resetPassword             *connect.Client[v1.ResetPasswordRequest, emptypb.Empty]
-}
-
-// InitiateSignup calls auth.v1.AuthService.InitiateSignup.
-func (c *authServiceClient) InitiateSignup(ctx context.Context, req *connect.Request[v1.InitiateSignupRequest]) (*connect.Response[v1.InitiateSignupResponse], error) {
-	return c.initiateSignup.CallUnary(ctx, req)
+	refreshToken              *connect.Client[emptypb.Empty, v1.AuthResponse]
+	logout                    *connect.Client[v1.LogoutRequest, v1.LogoutResponse]
 }
 
 // CheckUsernameAvailability calls auth.v1.AuthService.CheckUsernameAvailability.
 func (c *authServiceClient) CheckUsernameAvailability(ctx context.Context, req *connect.Request[v1.CheckUsernameRequest]) (*connect.Response[v1.CheckUsernameResponse], error) {
 	return c.checkUsernameAvailability.CallUnary(ctx, req)
+}
+
+// InitiateSignup calls auth.v1.AuthService.InitiateSignup.
+func (c *authServiceClient) InitiateSignup(ctx context.Context, req *connect.Request[v1.InitiateSignupRequest]) (*connect.Response[v1.InitiateSignupResponse], error) {
+	return c.initiateSignup.CallUnary(ctx, req)
 }
 
 // VerifySignup calls auth.v1.AuthService.VerifySignup.
@@ -200,10 +221,20 @@ func (c *authServiceClient) ResetPassword(ctx context.Context, req *connect.Requ
 	return c.resetPassword.CallUnary(ctx, req)
 }
 
+// RefreshToken calls auth.v1.AuthService.RefreshToken.
+func (c *authServiceClient) RefreshToken(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[v1.AuthResponse], error) {
+	return c.refreshToken.CallUnary(ctx, req)
+}
+
+// Logout calls auth.v1.AuthService.Logout.
+func (c *authServiceClient) Logout(ctx context.Context, req *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error) {
+	return c.logout.CallUnary(ctx, req)
+}
+
 // AuthServiceHandler is an implementation of the auth.v1.AuthService service.
 type AuthServiceHandler interface {
-	InitiateSignup(context.Context, *connect.Request[v1.InitiateSignupRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
 	CheckUsernameAvailability(context.Context, *connect.Request[v1.CheckUsernameRequest]) (*connect.Response[v1.CheckUsernameResponse], error)
+	InitiateSignup(context.Context, *connect.Request[v1.InitiateSignupRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
 	VerifySignup(context.Context, *connect.Request[v1.VerifySignupRequest]) (*connect.Response[v1.AuthResponse], error)
 	ResendOTP(context.Context, *connect.Request[v1.ResendOTPRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
 	Login(context.Context, *connect.Request[v1.LoginRequest]) (*connect.Response[v1.AuthResponse], error)
@@ -211,6 +242,8 @@ type AuthServiceHandler interface {
 	ResendForgotPasswordOTP(context.Context, *connect.Request[v1.ResendForgotPasswordOTPRequest]) (*connect.Response[v1.InitiateSignupResponse], error)
 	VerifyForgotPasswordOTP(context.Context, *connect.Request[v1.VerifyForgotPasswordOTPRequest]) (*connect.Response[emptypb.Empty], error)
 	ResetPassword(context.Context, *connect.Request[v1.ResetPasswordRequest]) (*connect.Response[emptypb.Empty], error)
+	RefreshToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.AuthResponse], error)
+	Logout(context.Context, *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error)
 }
 
 // NewAuthServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -220,16 +253,16 @@ type AuthServiceHandler interface {
 // and JSON codecs. They also support gzip compression.
 func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
 	authServiceMethods := v1.File_proto_auth_v1_auth_proto.Services().ByName("AuthService").Methods()
-	authServiceInitiateSignupHandler := connect.NewUnaryHandler(
-		AuthServiceInitiateSignupProcedure,
-		svc.InitiateSignup,
-		connect.WithSchema(authServiceMethods.ByName("InitiateSignup")),
-		connect.WithHandlerOptions(opts...),
-	)
 	authServiceCheckUsernameAvailabilityHandler := connect.NewUnaryHandler(
 		AuthServiceCheckUsernameAvailabilityProcedure,
 		svc.CheckUsernameAvailability,
 		connect.WithSchema(authServiceMethods.ByName("CheckUsernameAvailability")),
+		connect.WithHandlerOptions(opts...),
+	)
+	authServiceInitiateSignupHandler := connect.NewUnaryHandler(
+		AuthServiceInitiateSignupProcedure,
+		svc.InitiateSignup,
+		connect.WithSchema(authServiceMethods.ByName("InitiateSignup")),
 		connect.WithHandlerOptions(opts...),
 	)
 	authServiceVerifySignupHandler := connect.NewUnaryHandler(
@@ -274,12 +307,24 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 		connect.WithSchema(authServiceMethods.ByName("ResetPassword")),
 		connect.WithHandlerOptions(opts...),
 	)
+	authServiceRefreshTokenHandler := connect.NewUnaryHandler(
+		AuthServiceRefreshTokenProcedure,
+		svc.RefreshToken,
+		connect.WithSchema(authServiceMethods.ByName("RefreshToken")),
+		connect.WithHandlerOptions(opts...),
+	)
+	authServiceLogoutHandler := connect.NewUnaryHandler(
+		AuthServiceLogoutProcedure,
+		svc.Logout,
+		connect.WithSchema(authServiceMethods.ByName("Logout")),
+		connect.WithHandlerOptions(opts...),
+	)
 	return "/auth.v1.AuthService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
-		case AuthServiceInitiateSignupProcedure:
-			authServiceInitiateSignupHandler.ServeHTTP(w, r)
 		case AuthServiceCheckUsernameAvailabilityProcedure:
 			authServiceCheckUsernameAvailabilityHandler.ServeHTTP(w, r)
+		case AuthServiceInitiateSignupProcedure:
+			authServiceInitiateSignupHandler.ServeHTTP(w, r)
 		case AuthServiceVerifySignupProcedure:
 			authServiceVerifySignupHandler.ServeHTTP(w, r)
 		case AuthServiceResendOTPProcedure:
@@ -294,6 +339,10 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 			authServiceVerifyForgotPasswordOTPHandler.ServeHTTP(w, r)
 		case AuthServiceResetPasswordProcedure:
 			authServiceResetPasswordHandler.ServeHTTP(w, r)
+		case AuthServiceRefreshTokenProcedure:
+			authServiceRefreshTokenHandler.ServeHTTP(w, r)
+		case AuthServiceLogoutProcedure:
+			authServiceLogoutHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -303,12 +352,12 @@ func NewAuthServiceHandler(svc AuthServiceHandler, opts ...connect.HandlerOption
 // UnimplementedAuthServiceHandler returns CodeUnimplemented from all methods.
 type UnimplementedAuthServiceHandler struct{}
 
-func (UnimplementedAuthServiceHandler) InitiateSignup(context.Context, *connect.Request[v1.InitiateSignupRequest]) (*connect.Response[v1.InitiateSignupResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.InitiateSignup is not implemented"))
-}
-
 func (UnimplementedAuthServiceHandler) CheckUsernameAvailability(context.Context, *connect.Request[v1.CheckUsernameRequest]) (*connect.Response[v1.CheckUsernameResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.CheckUsernameAvailability is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) InitiateSignup(context.Context, *connect.Request[v1.InitiateSignupRequest]) (*connect.Response[v1.InitiateSignupResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.InitiateSignup is not implemented"))
 }
 
 func (UnimplementedAuthServiceHandler) VerifySignup(context.Context, *connect.Request[v1.VerifySignupRequest]) (*connect.Response[v1.AuthResponse], error) {
@@ -337,4 +386,12 @@ func (UnimplementedAuthServiceHandler) VerifyForgotPasswordOTP(context.Context, 
 
 func (UnimplementedAuthServiceHandler) ResetPassword(context.Context, *connect.Request[v1.ResetPasswordRequest]) (*connect.Response[emptypb.Empty], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.ResetPassword is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) RefreshToken(context.Context, *connect.Request[emptypb.Empty]) (*connect.Response[v1.AuthResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.RefreshToken is not implemented"))
+}
+
+func (UnimplementedAuthServiceHandler) Logout(context.Context, *connect.Request[v1.LogoutRequest]) (*connect.Response[v1.LogoutResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("auth.v1.AuthService.Logout is not implemented"))
 }
