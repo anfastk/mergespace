@@ -739,6 +739,86 @@ func (x *ResetPasswordRequest) GetNewPassword() string {
 	return ""
 }
 
+type LogoutRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutRequest) Reset() {
+	*x = LogoutRequest{}
+	mi := &file_proto_auth_v1_auth_proto_msgTypes[13]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutRequest) ProtoMessage() {}
+
+func (x *LogoutRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_v1_auth_proto_msgTypes[13]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutRequest.ProtoReflect.Descriptor instead.
+func (*LogoutRequest) Descriptor() ([]byte, []int) {
+	return file_proto_auth_v1_auth_proto_rawDescGZIP(), []int{13}
+}
+
+type LogoutResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Message       string                 `protobuf:"bytes,1,opt,name=message,proto3" json:"message,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *LogoutResponse) Reset() {
+	*x = LogoutResponse{}
+	mi := &file_proto_auth_v1_auth_proto_msgTypes[14]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *LogoutResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*LogoutResponse) ProtoMessage() {}
+
+func (x *LogoutResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_proto_auth_v1_auth_proto_msgTypes[14]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use LogoutResponse.ProtoReflect.Descriptor instead.
+func (*LogoutResponse) Descriptor() ([]byte, []int) {
+	return file_proto_auth_v1_auth_proto_rawDescGZIP(), []int{14}
+}
+
+func (x *LogoutResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
 var File_proto_auth_v1_auth_proto protoreflect.FileDescriptor
 
 const file_proto_auth_v1_auth_proto_rawDesc = "" +
@@ -788,17 +868,22 @@ const file_proto_auth_v1_auth_proto_rawDesc = "" +
 	"\x03otp\x18\x02 \x01(\tR\x03otp\"T\n" +
 	"\x14ResetPasswordRequest\x12\x19\n" +
 	"\breset_id\x18\x01 \x01(\tR\aresetId\x12!\n" +
-	"\fnew_password\x18\x02 \x01(\tR\vnewPassword2\xdd\x05\n" +
-	"\vAuthService\x12Q\n" +
-	"\x0eInitiateSignup\x12\x1e.auth.v1.InitiateSignupRequest\x1a\x1f.auth.v1.InitiateSignupResponse\x12Z\n" +
-	"\x19CheckUsernameAvailability\x12\x1d.auth.v1.CheckUsernameRequest\x1a\x1e.auth.v1.CheckUsernameResponse\x12C\n" +
+	"\fnew_password\x18\x02 \x01(\tR\vnewPassword\"\x0f\n" +
+	"\rLogoutRequest\"*\n" +
+	"\x0eLogoutResponse\x12\x18\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage2\xd7\x06\n" +
+	"\vAuthService\x12Z\n" +
+	"\x19CheckUsernameAvailability\x12\x1d.auth.v1.CheckUsernameRequest\x1a\x1e.auth.v1.CheckUsernameResponse\x12Q\n" +
+	"\x0eInitiateSignup\x12\x1e.auth.v1.InitiateSignupRequest\x1a\x1f.auth.v1.InitiateSignupResponse\x12C\n" +
 	"\fVerifySignup\x12\x1c.auth.v1.VerifySignupRequest\x1a\x15.auth.v1.AuthResponse\x12G\n" +
 	"\tResendOTP\x12\x19.auth.v1.ResendOTPRequest\x1a\x1f.auth.v1.InitiateSignupResponse\x125\n" +
 	"\x05Login\x12\x15.auth.v1.LoginRequest\x1a\x15.auth.v1.AuthResponse\x12Q\n" +
 	"\x0eForgotPassword\x12\x1e.auth.v1.ForgotPasswordRequest\x1a\x1f.auth.v1.InitiateSignupResponse\x12c\n" +
 	"\x17ResendForgotPasswordOTP\x12'.auth.v1.ResendForgotPasswordOTPRequest\x1a\x1f.auth.v1.InitiateSignupResponse\x12Z\n" +
 	"\x17VerifyForgotPasswordOTP\x12'.auth.v1.VerifyForgotPasswordOTPRequest\x1a\x16.google.protobuf.Empty\x12F\n" +
-	"\rResetPassword\x12\x1d.auth.v1.ResetPasswordRequest\x1a\x16.google.protobuf.EmptyBEZCgithub.com/anfastk/mergespace/contracts/gen/go/proto/auth/v1;authv1b\x06proto3"
+	"\rResetPassword\x12\x1d.auth.v1.ResetPasswordRequest\x1a\x16.google.protobuf.Empty\x12=\n" +
+	"\fRefreshToken\x12\x16.google.protobuf.Empty\x1a\x15.auth.v1.AuthResponse\x129\n" +
+	"\x06Logout\x12\x16.auth.v1.LogoutRequest\x1a\x17.auth.v1.LogoutResponseBEZCgithub.com/anfastk/mergespace/contracts/gen/go/proto/auth/v1;authv1b\x06proto3"
 
 var (
 	file_proto_auth_v1_auth_proto_rawDescOnce sync.Once
@@ -812,7 +897,7 @@ func file_proto_auth_v1_auth_proto_rawDescGZIP() []byte {
 	return file_proto_auth_v1_auth_proto_rawDescData
 }
 
-var file_proto_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 13)
+var file_proto_auth_v1_auth_proto_msgTypes = make([]protoimpl.MessageInfo, 15)
 var file_proto_auth_v1_auth_proto_goTypes = []any{
 	(*InitiateSignupRequest)(nil),          // 0: auth.v1.InitiateSignupRequest
 	(*InitiateSignupResponse)(nil),         // 1: auth.v1.InitiateSignupResponse
@@ -827,14 +912,16 @@ var file_proto_auth_v1_auth_proto_goTypes = []any{
 	(*ResendForgotPasswordOTPRequest)(nil), // 10: auth.v1.ResendForgotPasswordOTPRequest
 	(*VerifyForgotPasswordOTPRequest)(nil), // 11: auth.v1.VerifyForgotPasswordOTPRequest
 	(*ResetPasswordRequest)(nil),           // 12: auth.v1.ResetPasswordRequest
-	(*timestamppb.Timestamp)(nil),          // 13: google.protobuf.Timestamp
-	(*emptypb.Empty)(nil),                  // 14: google.protobuf.Empty
+	(*LogoutRequest)(nil),                  // 13: auth.v1.LogoutRequest
+	(*LogoutResponse)(nil),                 // 14: auth.v1.LogoutResponse
+	(*timestamppb.Timestamp)(nil),          // 15: google.protobuf.Timestamp
+	(*emptypb.Empty)(nil),                  // 16: google.protobuf.Empty
 }
 var file_proto_auth_v1_auth_proto_depIdxs = []int32{
 	5,  // 0: auth.v1.AuthResponse.user:type_name -> auth.v1.UserRes
-	13, // 1: auth.v1.AuthResponse.access_expires_at:type_name -> google.protobuf.Timestamp
-	0,  // 2: auth.v1.AuthService.InitiateSignup:input_type -> auth.v1.InitiateSignupRequest
-	2,  // 3: auth.v1.AuthService.CheckUsernameAvailability:input_type -> auth.v1.CheckUsernameRequest
+	15, // 1: auth.v1.AuthResponse.access_expires_at:type_name -> google.protobuf.Timestamp
+	2,  // 2: auth.v1.AuthService.CheckUsernameAvailability:input_type -> auth.v1.CheckUsernameRequest
+	0,  // 3: auth.v1.AuthService.InitiateSignup:input_type -> auth.v1.InitiateSignupRequest
 	4,  // 4: auth.v1.AuthService.VerifySignup:input_type -> auth.v1.VerifySignupRequest
 	7,  // 5: auth.v1.AuthService.ResendOTP:input_type -> auth.v1.ResendOTPRequest
 	8,  // 6: auth.v1.AuthService.Login:input_type -> auth.v1.LoginRequest
@@ -842,17 +929,21 @@ var file_proto_auth_v1_auth_proto_depIdxs = []int32{
 	10, // 8: auth.v1.AuthService.ResendForgotPasswordOTP:input_type -> auth.v1.ResendForgotPasswordOTPRequest
 	11, // 9: auth.v1.AuthService.VerifyForgotPasswordOTP:input_type -> auth.v1.VerifyForgotPasswordOTPRequest
 	12, // 10: auth.v1.AuthService.ResetPassword:input_type -> auth.v1.ResetPasswordRequest
-	1,  // 11: auth.v1.AuthService.InitiateSignup:output_type -> auth.v1.InitiateSignupResponse
-	3,  // 12: auth.v1.AuthService.CheckUsernameAvailability:output_type -> auth.v1.CheckUsernameResponse
-	6,  // 13: auth.v1.AuthService.VerifySignup:output_type -> auth.v1.AuthResponse
-	1,  // 14: auth.v1.AuthService.ResendOTP:output_type -> auth.v1.InitiateSignupResponse
-	6,  // 15: auth.v1.AuthService.Login:output_type -> auth.v1.AuthResponse
-	1,  // 16: auth.v1.AuthService.ForgotPassword:output_type -> auth.v1.InitiateSignupResponse
-	1,  // 17: auth.v1.AuthService.ResendForgotPasswordOTP:output_type -> auth.v1.InitiateSignupResponse
-	14, // 18: auth.v1.AuthService.VerifyForgotPasswordOTP:output_type -> google.protobuf.Empty
-	14, // 19: auth.v1.AuthService.ResetPassword:output_type -> google.protobuf.Empty
-	11, // [11:20] is the sub-list for method output_type
-	2,  // [2:11] is the sub-list for method input_type
+	16, // 11: auth.v1.AuthService.RefreshToken:input_type -> google.protobuf.Empty
+	13, // 12: auth.v1.AuthService.Logout:input_type -> auth.v1.LogoutRequest
+	3,  // 13: auth.v1.AuthService.CheckUsernameAvailability:output_type -> auth.v1.CheckUsernameResponse
+	1,  // 14: auth.v1.AuthService.InitiateSignup:output_type -> auth.v1.InitiateSignupResponse
+	6,  // 15: auth.v1.AuthService.VerifySignup:output_type -> auth.v1.AuthResponse
+	1,  // 16: auth.v1.AuthService.ResendOTP:output_type -> auth.v1.InitiateSignupResponse
+	6,  // 17: auth.v1.AuthService.Login:output_type -> auth.v1.AuthResponse
+	1,  // 18: auth.v1.AuthService.ForgotPassword:output_type -> auth.v1.InitiateSignupResponse
+	1,  // 19: auth.v1.AuthService.ResendForgotPasswordOTP:output_type -> auth.v1.InitiateSignupResponse
+	16, // 20: auth.v1.AuthService.VerifyForgotPasswordOTP:output_type -> google.protobuf.Empty
+	16, // 21: auth.v1.AuthService.ResetPassword:output_type -> google.protobuf.Empty
+	6,  // 22: auth.v1.AuthService.RefreshToken:output_type -> auth.v1.AuthResponse
+	14, // 23: auth.v1.AuthService.Logout:output_type -> auth.v1.LogoutResponse
+	13, // [13:24] is the sub-list for method output_type
+	2,  // [2:13] is the sub-list for method input_type
 	2,  // [2:2] is the sub-list for extension type_name
 	2,  // [2:2] is the sub-list for extension extendee
 	0,  // [0:2] is the sub-list for field type_name
@@ -869,7 +960,7 @@ func file_proto_auth_v1_auth_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_proto_auth_v1_auth_proto_rawDesc), len(file_proto_auth_v1_auth_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   13,
+			NumMessages:   15,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -77,6 +77,12 @@ message ResetPasswordRequest {
   string new_password = 2;
 }
 
+message LogoutRequest {}
+
+message LogoutResponse {
+  string message = 1;
+}
+
 service AuthService {
   rpc CheckUsernameAvailability(CheckUsernameRequest) returns (CheckUsernameResponse);
 
@@ -91,5 +97,7 @@ service AuthService {
   rpc ResendForgotPasswordOTP(ResendForgotPasswordOTPRequest) returns (InitiateSignupResponse);
   rpc VerifyForgotPasswordOTP(VerifyForgotPasswordOTPRequest) returns (google.protobuf.Empty);
   rpc ResetPassword(ResetPasswordRequest) returns (google.protobuf.Empty);
+  rpc RefreshToken(google.protobuf.Empty) returns (AuthResponse);
+  rpc Logout(LogoutRequest) returns (LogoutResponse);
 
 }
