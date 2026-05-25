@@ -23,10 +23,17 @@ type GoogleConfig struct {
 	RedirectURL  string
 }
 
+type GitHubConfig struct {
+	ClientID     string
+	ClientSecret string
+	RedirectURL  string
+}
+
 type Config struct {
 	DatabaseURL string
 	Kafka       KafkaConfig
 	Redis       RedisConfig
 	JWT         JWTConfig
 	Google      GoogleConfig
+	GitHub      GitHubConfig
 }

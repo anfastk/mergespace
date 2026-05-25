@@ -6,6 +6,6 @@ import (
 	"github.com/anfastk/mergespace/auth/internal/auth/application/dto"
 )
 
-type OAuthProvider interface {
-	GetGoogleUser(ctx context.Context, code string) (*dto.GoogleUser, error)
+type GitHubOAuthProvider interface {
+	GetGitHubUser(ctx context.Context, code string) (*dto.GitHubUser, error)
 }

@@ -21,4 +21,10 @@ type AuthUseCase interface {
 	ResetPassword(ctx context.Context, req *dto.ResetPasswordRequest) error
 
 	GoogleLogin(ctx context.Context, code string) (*dto.AuthResponse, error)
+
+	GitHubLogin(ctx context.Context, code string) (*dto.AuthResponse, error)
+
+	RefreshToken(ctx context.Context, req *dto.RefreshTokenRequest) (*dto.AuthResponse, error)
+
+	Logout(ctx context.Context, req *dto.LogoutRequest) error
 }

@@ -2,6 +2,7 @@ package postgres
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
 
@@ -70,29 +71,55 @@ func (r *UserRepository) CreateUser(ctx context.Context, user *entity.User) erro
 }
 
 func (r *UserRepository) FindByEmail(ctx context.Context, email string) (*entity.User, error) {
+
 	query := `
-		SELECT id, username, email, password_hash, created_at, updated_at 
-		FROM users 
+		SELECT
+			id,
+			email,
+			username,
+			password_hash,
+			status
+		FROM users
 		WHERE email = $1
 	`
 
-	user := &entity.User{}
+	row := r.db.QueryRow(ctx, query, email)
 
-	err := r.db.QueryRow(ctx, query, email).Scan(
-		&user.UserID,
-		&user.Username,
-		&user.Email,
-		&user.Password,
+	var (
+		id           string
+		emailStr     string
+		usernameStr  string
+		status       string
+		passwordHash sql.NullString
+	)
+
+	err := row.Scan(
+		&id,
+		&emailStr,
+		&usernameStr,
+		&passwordHash,
+		&status,
 	)
 
 	if err != nil {
+
 		if errors.Is(err, pgx.ErrNoRows) {
-			return nil, fmt.Errorf("user not found")
+			return nil, errs.ErrUserNotFound
 		}
-		return nil, fmt.Errorf("failed to find user by email: %w", err)
+
+		return nil, fmt.Errorf(
+			"failed to find user by email: %w",
+			err,
+		)
 	}
 
-	return user, nil
+	return toDomainUser(
+		id,
+		emailStr,
+		usernameStr,
+		passwordHash.String,
+		status,
+	)
 }
 
 func (r *UserRepository) FindByEmailOrUsername(ctx context.Context, value string) (*entity.User, error) {
@@ -168,65 +195,54 @@ func (r *UserRepository) UpdatePassword(ctx context.Context, userID string, hash
 	return err
 }
 
-func (r *UserRepository) FindByID(
-	ctx context.Context,
-	id string,
-) (*entity.User, error) {
+func (r *UserRepository) FindByID(ctx context.Context, userID string) (*entity.User, error) {
 
 	query := `
-	SELECT id, email, username, password_hash, status
-	FROM users
-	WHERE id = $1
-	LIMIT 1
+		SELECT
+			id,
+			email,
+			username,
+			password_hash,
+			status
+		FROM users
+		WHERE id = $1
 	`
 
-	row := r.db.QueryRow(ctx, query, id)
+	row := r.db.QueryRow(ctx, query, userID)
 
 	var (
-		userID       string
-		email        string
-		username     string
-		passwordHash *string
+		id           string
+		emailStr     string
+		usernameStr  string
 		status       string
+		passwordHash sql.NullString
 	)
 
 	err := row.Scan(
-		&userID,
-		&email,
-		&username,
+		&id,
+		&emailStr,
+		&usernameStr,
 		&passwordHash,
 		&status,
 	)
+
 	if err != nil {
+
 		if errors.Is(err, pgx.ErrNoRows) {
 			return nil, errs.ErrUserNotFound
 		}
-		return nil, err
+
+		return nil, fmt.Errorf(
+			"failed to find user by id: %w",
+			err,
+		)
 	}
 
-	uid, err := valueobject.NewUserID(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	userEmail, err := valueobject.NewEmail(email)
-	if err != nil {
-		return nil, err
-	}
-
-	userUsername, err := valueobject.NewUsername(username)
-	if err != nil {
-		return nil, err
-	}
-
-	user := entity.NewLocalUser(
-		uid,
-		userEmail,
-		userUsername,
-		passwordHash,
+	return toDomainUser(
+		id,
+		emailStr,
+		usernameStr,
+		passwordHash.String,
+		status,
 	)
-
-	user.Status = entity.UserStatus(status)
-
-	return user, nil
 }

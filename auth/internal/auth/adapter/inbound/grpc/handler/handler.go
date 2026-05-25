@@ -2,6 +2,7 @@ package grpc
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log"
 
@@ -80,7 +81,7 @@ func (h *AuthHandler) VerifySignup(ctx context.Context, req *connect.Request[aut
 
 func buildRefreshCookie(token string) string {
 	return fmt.Sprintf(
-		"refresh_token=%s; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=%d",
+		"refresh_token=%s; Path=/; HttpOnly; SameSite=Lax; Max-Age=%d",
 		token,
 		7*24*60*60,
 	)
@@ -193,4 +194,72 @@ func (h *AuthHandler) ResetPassword(ctx context.Context, req *connect.Request[au
 	}
 
 	return connect.NewResponse(&emptypb.Empty{}), nil
+}
+
+func (h *AuthHandler) RefreshToken(ctx context.Context, req *connect.Request[emptypb.Empty]) (*connect.Response[authv1.AuthResponse], error) {
+
+	cookie := req.Header().Get("Cookie")
+
+	refreshToken := extractRefreshToken(cookie)
+
+	if refreshToken == "" {
+		return nil, connect.NewError(
+			connect.CodeUnauthenticated,
+			errors.New("missing refresh token"),
+		)
+	}
+
+	res, err := h.usecase.RefreshToken(
+		ctx,
+		&dto.RefreshTokenRequest{
+			RefreshToken: refreshToken,
+		},
+	)
+	if err != nil {
+		return nil, mapper.MapDomainError(err)
+	}
+
+	return connect.NewResponse(
+		&authv1.AuthResponse{
+			AccessToken:     res.AccessToken,
+			AccessExpiresAt: timestamppb.New(res.AccessExpiresAt),
+		},
+	), nil
+}
+
+func (h *AuthHandler) Logout(ctx context.Context, req *connect.Request[authv1.LogoutRequest]) (*connect.Response[authv1.LogoutResponse], error) {
+
+	cookie := req.Header().Get("Cookie")
+
+	refreshToken := extractRefreshToken(cookie)
+
+	if refreshToken == "" {
+		return nil, connect.NewError(
+			connect.CodeUnauthenticated,
+			errors.New("missing refresh token"),
+		)
+	}
+
+	err := h.usecase.Logout(
+		ctx,
+		&dto.LogoutRequest{
+			RefreshToken: refreshToken,
+		},
+	)
+	if err != nil {
+		return nil, mapper.MapDomainError(err)
+	}
+
+	response := connect.NewResponse(
+		&authv1.LogoutResponse{
+			Message: "Logout successful",
+		},
+	)
+
+	response.Header().Add(
+		"Set-Cookie",
+		"refresh_token=; Path=/; HttpOnly; SameSite=Lax; Max-Age=-1",
+	)
+
+	return response, nil
 }

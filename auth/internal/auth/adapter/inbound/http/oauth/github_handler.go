@@ -7,26 +7,36 @@ import (
 	"github.com/anfastk/mergespace/auth/internal/auth/application/port/inbound"
 )
 
-type GoogleHandler struct {
+type GitHubHandler struct {
 	authService inbound.AuthUseCase
-	provider    *oauth.GoogleOAuthProvider
+	provider    *oauth.GitHubOAuthProvider
 }
 
-func NewGoogleHandler(authService inbound.AuthUseCase, provider *oauth.GoogleOAuthProvider) *GoogleHandler {
-	return &GoogleHandler{
+func NewGitHubHandler(
+	authService inbound.AuthUseCase, provider *oauth.GitHubOAuthProvider) *GitHubHandler {
+
+	return &GitHubHandler{
 		authService: authService,
 		provider:    provider,
 	}
 }
 
-func (h *GoogleHandler) Login(w http.ResponseWriter, r *http.Request) {
+func (h *GitHubHandler) Login(
+	w http.ResponseWriter,
+	r *http.Request,
+) {
 
 	url := h.provider.GetLoginURL("random-state")
 
-	http.Redirect(w, r, url, http.StatusTemporaryRedirect)
+	http.Redirect(
+		w,
+		r,
+		url,
+		http.StatusTemporaryRedirect,
+	)
 }
 
-func (h *GoogleHandler) Callback(w http.ResponseWriter, r *http.Request) {
+func (h *GitHubHandler) Callback(w http.ResponseWriter, r *http.Request) {
 
 	code := r.URL.Query().Get("code")
 
@@ -35,7 +45,10 @@ func (h *GoogleHandler) Callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, err := h.authService.GoogleLogin(r.Context(), code)
+	res, err := h.authService.GitHubLogin(
+		r.Context(),
+		code,
+	)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

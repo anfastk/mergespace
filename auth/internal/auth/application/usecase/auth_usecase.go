@@ -3,11 +3,13 @@ package usecase
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"math/rand"
 	"time"
 
+	"github.com/anfastk/mergespace/auth/internal/auth/adapter/outbound/oauth"
 	"github.com/anfastk/mergespace/auth/internal/auth/application/dto"
 	appErr "github.com/anfastk/mergespace/auth/internal/auth/application/errors"
 	"github.com/anfastk/mergespace/auth/internal/auth/application/port/inbound"
@@ -32,11 +34,13 @@ type AuthService struct {
 	outboxRepo         outbound.OutboxRepository
 	tokenGenerator     outbound.TokenGenerator
 	passwordResetStore outbound.PasswordResetStore
-	oauthProvider      outbound.OAuthProvider
+	googleProvider     outbound.GoogleOAuthProvider
+	githubProvider     outbound.GitHubOAuthProvider
 	authIdentityRepo   outbound.AuthIdentityRepository
+	refreshSessionRepo outbound.RefreshSessionRepository
 }
 
-func NewAuthService(db *pgxpool.Pool, user outbound.UserRepository, otpGen outbound.OTPGenerator, idGen outbound.IDGenerator, signupCtxStore outbound.SignupContextStore, passwordHasher outbound.PasswordHasher, producer outbound.EventProducer, outboxRepo outbound.OutboxRepository, tokenGen outbound.TokenGenerator, passwordResetStore outbound.PasswordResetStore, oauthProvider outbound.OAuthProvider, authIdentityRepo outbound.AuthIdentityRepository) *AuthService {
+func NewAuthService(db *pgxpool.Pool, user outbound.UserRepository, otpGen outbound.OTPGenerator, idGen outbound.IDGenerator, signupCtxStore outbound.SignupContextStore, passwordHasher outbound.PasswordHasher, producer outbound.EventProducer, outboxRepo outbound.OutboxRepository, tokenGen outbound.TokenGenerator, passwordResetStore outbound.PasswordResetStore, authIdentityRepo outbound.AuthIdentityRepository, googleProvider outbound.GoogleOAuthProvider, githubProvider *oauth.GitHubOAuthProvider, refreshSessionRepo outbound.RefreshSessionRepository) *AuthService {
 	return &AuthService{
 		db:                 db,
 		userRepo:           user,
@@ -48,8 +52,10 @@ func NewAuthService(db *pgxpool.Pool, user outbound.UserRepository, otpGen outbo
 		outboxRepo:         outboxRepo,
 		tokenGenerator:     tokenGen,
 		passwordResetStore: passwordResetStore,
-		oauthProvider:      oauthProvider,
 		authIdentityRepo:   authIdentityRepo,
+		githubProvider:     githubProvider,
+		googleProvider:     googleProvider,
+		refreshSessionRepo: refreshSessionRepo,
 	}
 }
 
@@ -344,8 +350,27 @@ func (s *AuthService) VerifySignup(ctx context.Context, req *dto.VerifySignupReq
 		return nil, err
 	}
 
-	refreshToken, err := s.tokenGenerator.GenerateRefreshToken(userID.String())
+	refreshToken, refreshExpiry, err := s.tokenGenerator.GenerateRefreshToken(
+		userID.String(),
+	)
 	if err != nil {
+		return nil, err
+	}
+
+	session := &entity.RefreshSession{
+		ID: s.idGen.NewID(ctx),
+
+		UserID: userID.String(),
+
+		RefreshToken: refreshToken,
+
+		ExpiresAt: refreshExpiry,
+	}
+
+	if err := s.refreshSessionRepo.Create(
+		ctx,
+		session,
+	); err != nil {
 		return nil, err
 	}
 
@@ -508,10 +533,27 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.Au
 		return nil, err
 	}
 
-	refreshToken, err := s.tokenGenerator.GenerateRefreshToken(
+	refreshToken, refreshExpiry, err := s.tokenGenerator.GenerateRefreshToken(
 		user.UserID.String(),
 	)
 	if err != nil {
+		return nil, err
+	}
+
+	session := &entity.RefreshSession{
+		ID: s.idGen.NewID(ctx),
+
+		UserID: user.UserID.String(),
+
+		RefreshToken: refreshToken,
+
+		ExpiresAt: refreshExpiry,
+	}
+
+	if err := s.refreshSessionRepo.Create(
+		ctx,
+		session,
+	); err != nil {
 		return nil, err
 	}
 
@@ -532,7 +574,6 @@ func (s *AuthService) ForgotPasswordInitiate(ctx context.Context, req *dto.Forgo
 
 	user, err := s.userRepo.FindByEmailOrUsername(ctx, req.EmailOrUsername)
 
-	// silent success
 	if err != nil {
 		return &dto.InitiateSignUpResponce{
 			Message: "If account exists, OTP has been sent.",
@@ -696,7 +737,6 @@ func (s *AuthService) ResendForgotPasswordOTP(ctx context.Context, req *dto.Rese
 		return nil, errs.ErrSignupContextNotFound
 	}
 
-	// cooldown check
 	lastSentAt, err := s.passwordResetStore.GetLastOTPSentAt(
 		ctx,
 		reset.ID,
@@ -760,4 +800,32 @@ func (s *AuthService) ResendForgotPasswordOTP(ctx context.Context, req *dto.Rese
 		TempID:  string(reset.ID),
 		Message: "OTP resent successfully",
 	}, nil
+}
+
+func (s *AuthService) Logout(ctx context.Context, req *dto.LogoutRequest) error {
+
+	if req.RefreshToken == "" {
+		return errors.New("refresh token required")
+	}
+
+	session, err := s.refreshSessionRepo.FindByToken(
+		ctx,
+		req.RefreshToken,
+	)
+	if err != nil {
+		return err
+	}
+
+	if session == nil {
+		return errors.New("session not found")
+	}
+
+	if session.Revoked {
+		return errors.New("session already revoked")
+	}
+
+	return s.refreshSessionRepo.Revoke(
+		ctx,
+		req.RefreshToken,
+	)
 }

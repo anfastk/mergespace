@@ -50,5 +50,10 @@ func Load() (*Config, error) {
 			ClientSecret: os.Getenv("GOOGLE_CLIENT_SECRET"),
 			RedirectURL:  os.Getenv("GOOGLE_REDIRECT_URL"),
 		},
+		GitHub: GitHubConfig{
+			ClientID:     os.Getenv("GITHUB_CLIENT_ID"),
+			ClientSecret: os.Getenv("GITHUB_CLIENT_SECRET"),
+			RedirectURL:  os.Getenv("GITHUB_REDIRECT_URL"),
+		},
 	}, nil
 }
