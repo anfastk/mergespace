@@ -1,63 +1,32 @@
 package postgres
-/* 
+
 import (
 	"github.com/anfastk/mergespace/auth/internal/auth/domain/entity"
+	"github.com/anfastk/mergespace/auth/internal/auth/domain/valueobject"
 )
 
-func toModel(u *entity.User) *UserModel {
-	var passwordHash *string
-	if u.Password != nil {
-		hash := u.Password.String()
-		passwordHash = &hash
-	}
+func toDomainUser(id string, email string, username string, passwordHash string, status string) (*entity.User, error) {
 
-	return &UserModel{
-		UserID:       u.UserID.String().String(),
-		Username:     u.Username.String(),
-		Email:        u.Email.String(),
-		PasswordHash: passwordHash,
-		Status:       string(u.Status),
-		CreatedAt:    u.CreatedAt,
-		UpdatedAt:    u.UpdatedAt,
-	}
-} */
-
-/* func toEntity(m *UserModel) (*entity.User, error) {
-	userID, err := valueobject.NewUserID(m.ID)
+	userID, err := valueobject.NewUserID(id)
 	if err != nil {
 		return nil, err
 	}
 
-	email, err := valueobject.NewEmail(m.Email)
+	emailVO, err := valueobject.NewEmail(email)
 	if err != nil {
 		return nil, err
 	}
 
-	username, err := valueobject.NewUsername(m.Username)
+	usernameVO, err := valueobject.NewUsername(username)
 	if err != nil {
 		return nil, err
-	}
-
-	firstName, _ := valueobject.NewName(m.FirstName)
-	lastName, _ := valueobject.NewName(m.LastName)
-
-	var password *valueobject.Password
-	if m.PasswordHash != nil {
-		password = valueobject.NewPassword(*m.PasswordHash)
 	}
 
 	return &entity.User{
-		UserID:       userID,
-		FirstName:    firstName,
-		LastName:     lastName,
-		Email:        email,
-		Username:     username,
-		AuthProvider: entity.AuthProvider(m.AuthProvider),
-		Password:     password,
-		ProviderID:   m.providerID,
-		Status:       entity.UserStatus(m.Status),
-		CreatedAt:    m.CreatedAt,
-		UpdatedAt:    m.UpdatedAt,
+		UserID:   userID,
+		Email:    emailVO,
+		Username: usernameVO,
+		Password: &passwordHash,
+		Status:   entity.UserStatus(status),
 	}, nil
 }
-*/

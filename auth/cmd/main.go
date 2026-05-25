@@ -20,17 +20,22 @@ func main() {
 
 	r := chi.NewRouter()
 
-	// ConnectRPC
 	_, handler := authv1connect.NewAuthServiceHandler(app.Handler)
 
-	// 🔥 IMPORTANT
 	r.Mount("/", handler)
 
-	// OAuth
 	googleHandler := httpOAuth.NewGoogleHandler(
 		app.HandlerUsecase,
 		app.GoogleProvider,
 	)
+
+	githubHandler := httpOAuth.NewGitHubHandler(
+		app.HandlerUsecase,
+		app.GitHubProvider,
+	)
+
+	r.Get("/auth/github/login", githubHandler.Login)
+	r.Get("/auth/github/callback", githubHandler.Callback)
 
 	r.Get("/auth/google/login", googleHandler.Login)
 	r.Get("/auth/google/callback", googleHandler.Callback)

@@ -28,6 +28,7 @@ type App struct {
 
 	HandlerUsecase inbound.AuthUseCase
 	GoogleProvider *oauth.GoogleOAuthProvider
+	GitHubProvider *oauth.GitHubOAuthProvider
 
 	Worker *worker.OutboxWorker
 }
@@ -86,9 +87,17 @@ func BuildApp() *App {
 		cfg.Google.RedirectURL,
 	)
 
+	githubProvider := oauth.NewGitHubOAuthProvider(
+		cfg.GitHub.ClientID,
+		cfg.GitHub.ClientSecret,
+		cfg.GitHub.RedirectURL,
+	)
+
 	authIdentityRepo := postgres.NewAuthIdentityRepository(db)
 
 	passwordResetStore := redis.NewPasswordResetRedisStore(redisClient)
+
+	refreshSessionRepo := postgres.NewRefreshSessionRepo(db)
 
 	authService := usecase.NewAuthService(
 		db,
@@ -101,8 +110,10 @@ func BuildApp() *App {
 		outboxRepo,
 		tokenGen,
 		passwordResetStore,
-		googleProvider,
 		authIdentityRepo,
+		googleProvider,
+		githubProvider,
+		refreshSessionRepo,
 	)
 
 	handler := grpc.NewAuthHandler(authService)
@@ -113,6 +124,7 @@ func BuildApp() *App {
 		Handler:        handler,
 		HandlerUsecase: authService,
 		GoogleProvider: googleProvider,
+		GitHubProvider: githubProvider,
 		Worker:         outboxWorker,
 	}
 }

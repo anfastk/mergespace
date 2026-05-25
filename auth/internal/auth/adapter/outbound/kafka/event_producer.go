@@ -25,7 +25,7 @@ func (e *EventProducer) PublishUserCreated(ctx context.Context, ev *event.UserCr
 	return e.producer.Publish(
 		ctx,
 		"user.created",
-		[]byte(ev.UserID), // or whatever key makes sense
+		[]byte(ev.UserID),
 		ev,
 	)
 }
