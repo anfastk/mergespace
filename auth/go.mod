@@ -3,16 +3,16 @@ module github.com/anfastk/mergespace/auth
 go 1.26.3
 
 require (
-	connectrpc.com/connect v1.19.2
-	github.com/anfastk/mergespace/contracts v0.0.0-20260513141229-f9033baae9c6
-	github.com/anfastk/mergespace/platform v0.0.0-20260513141229-f9033baae9c6
-	github.com/go-chi/chi/v5 v5.2.5
+	connectrpc.com/connect v1.20.0
+	github.com/anfastk/mergespace/contracts v0.0.0-20260525150301-63a011067dae
+	github.com/anfastk/mergespace/platform v0.0.0-20260525150301-63a011067dae
+	github.com/go-chi/chi/v5 v5.3.0
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.9.2
 	github.com/joho/godotenv v1.5.1
-	github.com/redis/go-redis/v9 v9.19.0
-	golang.org/x/crypto v0.51.0
+	github.com/redis/go-redis/v9 v9.20.0
+	golang.org/x/crypto v0.52.0
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/text v0.37.0
 	google.golang.org/protobuf v1.36.11
