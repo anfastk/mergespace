@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/anfastk/mergespace/platform/domain"
+	"github.com/google/uuid"
 	"github.com/twmb/franz-go/pkg/kgo"
 )
 
@@ -14,11 +15,7 @@ type Producer struct {
 	topic  string
 }
 
-func NewProducer(
-	brokers []string,
-	topic string,
-	codec domain.Codec,
-) (*Producer, error) {
+func NewProducer(brokers []string, topic string, codec domain.Codec) (*Producer, error) {
 
 	client, err := kgo.NewClient(ProducerOpts(brokers)...)
 	if err != nil {
@@ -32,12 +29,7 @@ func NewProducer(
 	}, nil
 }
 
-func (p *Producer) Publish(
-	ctx context.Context,
-	eventName string,
-	key []byte,
-	event any,
-) error {
+func (p *Producer) Publish(ctx context.Context, eventName string, key []byte, event any) error {
 
 	value, err := p.codec.Encode(eventName, event)
 	if err != nil {
@@ -52,7 +44,14 @@ func (p *Producer) Publish(
 		Key:   key,
 		Value: value,
 		Headers: []kgo.RecordHeader{
-			{Key: "event_name", Value: []byte(eventName)},
+			{
+				Key:   "event_name",
+				Value: []byte(eventName),
+			},
+			{
+				Key:   "event_id",
+				Value: []byte(uuid.NewString()),
+			},
 		},
 	}).FirstErr()
 }

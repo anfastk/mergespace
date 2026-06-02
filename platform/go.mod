@@ -3,6 +3,7 @@ module github.com/anfastk/mergespace/platform
 go 1.25
 
 require (
+	github.com/google/uuid v1.6.0
 	github.com/hamba/avro/v2 v2.31.0
 	github.com/riferrei/srclient v0.7.4
 	github.com/twmb/franz-go v1.20.6

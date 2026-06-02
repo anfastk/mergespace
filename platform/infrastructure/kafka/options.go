@@ -7,20 +7,52 @@ import (
 )
 
 func ProducerOpts(brokers []string) []kgo.Opt {
+
 	return []kgo.Opt{
-		kgo.SeedBrokers(brokers...),
-		kgo.RequiredAcks(kgo.AllISRAcks()),
+		kgo.SeedBrokers(
+			brokers...,
+		),
+
+		kgo.RequiredAcks(
+			kgo.AllISRAcks(),
+		),
+
 		kgo.RecordRetries(10),
-		kgo.ProducerLinger(10 * time.Millisecond),
-		kgo.ProducerBatchCompression(kgo.Lz4Compression()),
+
+		kgo.ProducerLinger(
+			10 * time.Millisecond,
+		),
+
+		kgo.ProducerBatchCompression(
+			kgo.Lz4Compression(),
+		),
 	}
 }
 
 func ConsumerOpts(brokers []string, group string, topics []string) []kgo.Opt {
+
 	return []kgo.Opt{
-		kgo.SeedBrokers(brokers...),
-		kgo.ConsumerGroup(group),
-		kgo.ConsumeTopics(topics...),
+
+		kgo.SeedBrokers(
+			brokers...,
+		),
+
+		kgo.ConsumerGroup(
+			group,
+		),
+
+		kgo.ConsumeTopics(
+			topics...,
+		),
+
 		kgo.BlockRebalanceOnPoll(),
+
+		kgo.FetchMaxWait(
+			5 * time.Second,
+		),
+
+		kgo.FetchMaxBytes(
+			10 * 1024 * 1024,
+		),
 	}
 }

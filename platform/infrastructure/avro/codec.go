@@ -27,11 +27,7 @@ func NewCodec(registry *Registry) *Codec {
 	}
 }
 
-func (c *Codec) Register(
-	eventName string,
-	subject string,
-	schemaStr string,
-) error {
+func (c *Codec) Register(eventName string, subject string, schemaStr string) error {
 
 	id, err := c.registry.Register(subject, schemaStr)
 	if err != nil {
