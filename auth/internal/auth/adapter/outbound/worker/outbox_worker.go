@@ -9,6 +9,8 @@ import (
 	"github.com/anfastk/mergespace/auth/internal/auth/application/event"
 	"github.com/anfastk/mergespace/auth/internal/auth/application/port/outbound"
 	"github.com/anfastk/mergespace/auth/internal/auth/domain/entity"
+	"github.com/anfastk/mergespace/platform/events"
+	platformEvents "github.com/anfastk/mergespace/platform/events"
 )
 
 type OutboxWorker struct {
@@ -71,19 +73,77 @@ func (w *OutboxWorker) process(ctx context.Context) {
 	}
 }
 
-func (w *OutboxWorker) handle(ctx context.Context, e *entity.OutboxEvent) error {
+func (w *OutboxWorker) handle(
+	ctx context.Context,
+	e *entity.OutboxEvent,
+) error {
 
-	if e.EventType != "SendOTP" {
-		return nil
+	log.Println(
+		"PUBLISHING EVENT:",
+		e.EventType,
+	)
+
+	switch e.EventType {
+
+	case platformEvents.EventSendOTP:
+
+		var payload event.SendOTP
+
+		if err := json.Unmarshal(
+			e.Payload,
+			&payload,
+		); err != nil {
+			return err
+		}
+
+		return w.eventProducer.Publish(
+			ctx,
+			platformEvents.EventSendOTP,
+			[]byte(payload.Email),
+			payload,
+		)
+
+	case platformEvents.EventUserCreated:
+
+		var payload event.UserCreated
+
+		if err := json.Unmarshal(
+			e.Payload,
+			&payload,
+		); err != nil {
+			return err
+		}
+
+		return w.eventProducer.Publish(
+			ctx,
+			platformEvents.EventUserCreated,
+			[]byte(payload.UserID),
+			payload,
+		)
+
+	case events.EventForgotPasswordOTP:
+
+		var payload event.ForgotPasswordOTP
+
+		if err := json.Unmarshal(
+			e.Payload,
+			&payload,
+		); err != nil {
+			return err
+		}
+
+		return w.eventProducer.Publish(
+			ctx,
+			events.EventForgotPasswordOTP,
+			[]byte(payload.Email),
+			payload,
+		)
 	}
 
-	var payload map[string]string
-	if err := json.Unmarshal(e.Payload, &payload); err != nil {
-		return err
-	}
+	log.Println(
+		"UNKNOWN EVENT:",
+		e.EventType,
+	)
 
-	return w.eventProducer.PublishSendOTP(ctx, &event.SendOTP{
-		Email: payload["email"],
-		OTP:   payload["otp"],
-	})
+	return nil
 }

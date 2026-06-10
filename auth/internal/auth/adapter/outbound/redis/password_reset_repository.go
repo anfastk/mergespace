@@ -9,6 +9,7 @@ import (
 
 	"github.com/anfastk/mergespace/auth/internal/auth/application/port/outbound"
 	"github.com/anfastk/mergespace/auth/internal/auth/domain/entity"
+	"github.com/anfastk/mergespace/auth/internal/auth/domain/valueobject"
 
 	"github.com/redis/go-redis/v9"
 )
@@ -25,14 +26,41 @@ func NewPasswordResetRedisStore(client *redis.Client) *PasswordResetRedisStore {
 
 func (r *PasswordResetRedisStore) Save(ctx context.Context, reset *entity.PasswordResetContext) error {
 
-	key := fmt.Sprintf("password_reset:%s", reset.ID)
+	key := fmt.Sprintf(
+		"password_reset:%s",
+		reset.ID,
+	)
+
+	emailKey := fmt.Sprintf(
+		"password_reset_email:%s",
+		reset.Email,
+	)
 
 	data, err := json.Marshal(reset)
 	if err != nil {
 		return err
 	}
 
-	return r.client.Set(ctx, key, data, 10*time.Minute).Err()
+	pipe := r.client.TxPipeline()
+
+	pipe.Set(
+		ctx,
+		key,
+		data,
+		10*time.Minute,
+	)
+
+	pipe.Set(
+		ctx,
+		emailKey,
+		string(reset.ID),
+		10*time.Minute,
+	)
+
+	_, err = pipe.Exec(ctx)
+
+	return err
+
 }
 
 func (r *PasswordResetRedisStore) FindByID(ctx context.Context, id entity.PasswordResetContextID) (*entity.PasswordResetContext, error) {
@@ -54,6 +82,33 @@ func (r *PasswordResetRedisStore) FindByID(ctx context.Context, id entity.Passwo
 	}
 
 	return &reset, nil
+}
+
+func (r *PasswordResetRedisStore) FindByEmail(ctx context.Context, email valueobject.Email) (*entity.PasswordResetContext, error) {
+	emailKey := fmt.Sprintf(
+		"password_reset_email:%s",
+		email.String(),
+	)
+
+	resetID, err := r.client.Get(
+		ctx,
+		emailKey,
+	).Result()
+
+	if err != nil {
+
+		if err == redis.Nil {
+			return nil, nil
+		}
+
+		return nil, err
+	}
+
+	return r.FindByID(
+		ctx,
+		entity.PasswordResetContextID(resetID),
+	)
+
 }
 
 func (r *PasswordResetRedisStore) Update(ctx context.Context, reset *entity.PasswordResetContext) error {

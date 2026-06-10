@@ -18,6 +18,7 @@ import (
 	"github.com/anfastk/mergespace/auth/internal/auth/infrastructure/crypto"
 	"github.com/anfastk/mergespace/auth/internal/auth/infrastructure/database"
 	redisconfig "github.com/anfastk/mergespace/auth/internal/auth/infrastructure/redisConfig"
+	"github.com/anfastk/mergespace/platform/events"
 	platformAvro "github.com/anfastk/mergespace/platform/infrastructure/avro"
 	platformKafka "github.com/anfastk/mergespace/platform/infrastructure/kafka"
 	"github.com/anfastk/mergespace/platform/infrastructure/messaging/schemas"
@@ -51,13 +52,45 @@ func BuildApp() *App {
 	registry := platformAvro.NewRegistry(cfg.Kafka.SchemaRegistryURL)
 	codec := platformAvro.NewCodec(registry)
 
-	schemaBytes, err := schemas.FS.ReadFile("send_otp.avsc")
+	sendOTPSchema, err := schemas.FS.ReadFile("send_otp.avsc")
 	if err != nil {
-		log.Fatalf("failed to read send_otp.avsc: %v", err)
+		log.Fatalf(
+			"failed to read send_otp.avsc: %v",
+			err,
+		)
 	}
 
-	if err := codec.Register("auth.send_otp", "auth.notification-send_otp-value", string(schemaBytes)); err != nil {
-		log.Fatalf("failed to register schema: %v", err)
+	if err := codec.Register(events.EventSendOTP, "auth.notification-send_otp-value", string(sendOTPSchema)); err != nil {
+
+		log.Fatalf(
+			"failed to register send otp schema: %v",
+			err,
+		)
+	}
+
+	userCreatedSchema, err := schemas.FS.ReadFile("user_created.avsc")
+	if err != nil {
+		log.Fatalf(
+			"failed to read user_created.avsc: %v",
+			err,
+		)
+	}
+
+	if err := codec.Register(events.EventUserCreated, "auth.notification-user_created-value", string(userCreatedSchema)); err != nil {
+
+		log.Fatalf(
+			"failed to register user created schema: %v",
+			err,
+		)
+	}
+
+	forgotPasswordSchema, err := schemas.FS.ReadFile("forgot_password_otp.avsc")
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	if err := codec.Register(events.EventForgotPasswordOTP, "auth.notification-forgot_password_otp-value", string(forgotPasswordSchema)); err != nil {
+		log.Fatal(err)
 	}
 
 	kafkaProducer, err := platformKafka.NewProducer(cfg.Kafka.Brokers, cfg.Kafka.UserSignupTopic, codec)

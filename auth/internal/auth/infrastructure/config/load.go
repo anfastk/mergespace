@@ -39,7 +39,7 @@ func Load() (*Config, error) {
 		Kafka: KafkaConfig{
 			Brokers:           strings.Split(getEnv("KAFKA_BROKERS", "localhost:29092"), ","),
 			SchemaRegistryURL: getEnv("SCHEMA_REGISTRY_URL", "http://localhost:8081"),
-			UserSignupTopic:   getEnv("TOPIC_USER_AUTH", "auth.events"),
+			UserSignupTopic:   getEnv("TOPIC_USER_AUTH", "auth-events"),
 		},
 		JWT: JWTConfig{
 			AccessSecret:  os.Getenv("JWT_ACCESS_SECRET"),

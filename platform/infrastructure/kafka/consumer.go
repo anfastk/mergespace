@@ -14,13 +14,7 @@ type Consumer struct {
 	handle domain.Handler
 }
 
-func NewConsumer(
-	brokers []string,
-	group string,
-	topics []string,
-	codec domain.Codec,
-	handler domain.Handler,
-) (*Consumer, error) {
+func NewConsumer(brokers []string, group string, topics []string, codec domain.Codec, handler domain.Handler) (*Consumer, error) {
 
 	client, err := kgo.NewClient(
 		ConsumerOpts(brokers, group, topics)...,
@@ -37,39 +31,130 @@ func NewConsumer(
 }
 
 func (c *Consumer) Run(ctx context.Context) error {
+
 	for {
-		fetches := c.client.PollFetches(ctx)
+
+		select {
+
+		case <-ctx.Done():
+
+			log.Println(
+				"consumer shutting down",
+			)
+
+			return ctx.Err()
+
+		default:
+		}
+
+		fetches := c.client.PollFetches(
+			ctx,
+		)
+
 		if fetches.IsClientClosed() {
 			return nil
 		}
 
+		if errs := fetches.Errors(); len(errs) > 0 {
+
+			for _, err := range errs {
+
+				log.Printf(
+					"kafka fetch error: %v",
+					err,
+				)
+			}
+
+			continue
+		}
+
 		fetches.EachRecord(func(r *kgo.Record) {
 
-			var eventName string
+			var (
+				eventName string
+				eventID   string
+			)
+
 			for _, h := range r.Headers {
-				if h.Key == "event_name" {
+
+				switch h.Key {
+
+				case "event_name":
 					eventName = string(h.Value)
-					break
+
+				case "event_id":
+					eventID = string(h.Value)
 				}
 			}
 
-			data, err := c.codec.Decode(r.Value)
+			data, err := c.codec.Decode(
+				r.Value,
+			)
 			if err != nil {
-				log.Println("decode error:", err)
+
+				log.Printf(
+					"event=%s event_id=%s decode_error=%v",
+					eventName,
+					eventID,
+					err,
+				)
+
 				return
 			}
 
-			if err := c.handle(ctx, domain.Envelope{
+			envelope := domain.Envelope{
+				ID:      eventID,
 				Name:    eventName,
 				Payload: data,
-			}); err != nil {
-				log.Println("handler error:", err)
 			}
-		})
 
-		if err := c.client.CommitUncommittedOffsets(ctx); err != nil {
-			log.Println("commit error:", err)
-		}
+			err = retry(
+				ctx,
+				3,
+				func() error {
+
+					return c.handle(
+						ctx,
+						envelope,
+					)
+				},
+			)
+
+			if err != nil {
+
+				log.Printf(
+					"event=%s event_id=%s handler_error=%v",
+					eventName,
+					eventID,
+					err,
+				)
+
+				return
+			}
+
+			err = c.client.CommitRecords(
+				ctx,
+				r,
+			)
+
+			if err != nil {
+
+				log.Printf(
+					"event=%s event_id=%s commit_error=%v",
+					eventName,
+					eventID,
+					err,
+				)
+
+				return
+			}
+
+			log.Printf(
+				"event=%s event_id=%s processed=true",
+				eventName,
+				eventID,
+			)
+		})
 	}
 }
 
