@@ -17,10 +17,27 @@ func ProducerOpts(brokers []string) []kgo.Opt {
 }
 
 func ConsumerOpts(brokers []string, group string, topics []string) []kgo.Opt {
+
 	return []kgo.Opt{
-		kgo.SeedBrokers(brokers...),
-		kgo.ConsumerGroup(group),
-		kgo.ConsumeTopics(topics...),
-		kgo.BlockRebalanceOnPoll(),
+
+		kgo.SeedBrokers(
+			brokers...,
+		),
+
+		kgo.ConsumerGroup(
+			group,
+		),
+
+		kgo.ConsumeTopics(
+			topics...,
+		),
+
+		kgo.FetchMaxWait(
+			5 * time.Second,
+		),
+
+		kgo.FetchMaxBytes(
+			10 * 1024 * 1024,
+		),
 	}
 }

@@ -12,12 +12,14 @@ import (
 	"github.com/anfastk/mergespace/auth/internal/auth/adapter/outbound/oauth"
 	"github.com/anfastk/mergespace/auth/internal/auth/application/dto"
 	appErr "github.com/anfastk/mergespace/auth/internal/auth/application/errors"
+	"github.com/anfastk/mergespace/auth/internal/auth/application/event"
 	"github.com/anfastk/mergespace/auth/internal/auth/application/port/inbound"
 	"github.com/anfastk/mergespace/auth/internal/auth/application/port/outbound"
 	"github.com/anfastk/mergespace/auth/internal/auth/domain/entity"
 	"github.com/anfastk/mergespace/auth/internal/auth/domain/errs"
 	domainErr "github.com/anfastk/mergespace/auth/internal/auth/domain/errs"
 	"github.com/anfastk/mergespace/auth/internal/auth/domain/valueobject"
+	platformEvents "github.com/anfastk/mergespace/platform/events"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
 
@@ -207,7 +209,7 @@ func (s *AuthService) InitiateSignup(ctx context.Context, req *dto.InitiateSignU
 
 	outbox := &entity.OutboxEvent{
 		ID:        s.idGen.NewID(ctx),
-		EventType: "SendOTP",
+		EventType: platformEvents.EventSendOTP,
 		Payload:   payload,
 		Status:    "pending",
 	}
@@ -328,7 +330,7 @@ func (s *AuthService) VerifySignup(ctx context.Context, req *dto.VerifySignupReq
 
 	outbox := &entity.OutboxEvent{
 		ID:        s.idGen.NewID(ctx),
-		EventType: "UserCreated",
+		EventType: platformEvents.EventUserCreated,
 		Payload:   payload,
 		Status:    "pending",
 	}
@@ -476,7 +478,7 @@ func (s *AuthService) ResendOTP(ctx context.Context, req *dto.ResendOTPRequest) 
 
 	outbox := &entity.OutboxEvent{
 		ID:        s.idGen.NewID(ctx),
-		EventType: "SendOTP",
+		EventType: platformEvents.EventSendOTP,
 		Payload:   payload,
 		Status:    "pending",
 	}
@@ -571,12 +573,59 @@ func (s *AuthService) Login(ctx context.Context, req *dto.LoginRequest) (*dto.Au
 }
 
 func (s *AuthService) ForgotPasswordInitiate(ctx context.Context, req *dto.ForgotPasswordRequest) (*dto.InitiateSignUpResponce, error) {
-
-	user, err := s.userRepo.FindByEmailOrUsername(ctx, req.EmailOrUsername)
+	user, err := s.userRepo.FindByEmailOrUsername(
+		ctx,
+		req.EmailOrUsername,
+	)
 
 	if err != nil {
+
 		return &dto.InitiateSignUpResponce{
 			Message: "If account exists, OTP has been sent.",
+		}, nil
+	}
+
+	existing, err := s.passwordResetStore.FindByEmail(
+		ctx,
+		user.Email,
+	)
+	if err != nil {
+		log.Println(
+			"find forgot password context error:",
+			err,
+		)
+
+		return nil, err
+	}
+
+	if existing != nil {
+
+		lastSentAt, err :=
+			s.passwordResetStore.GetLastOTPSentAt(
+				ctx,
+				existing.ID,
+			)
+
+		if err == nil {
+
+			remaining :=
+				60*time.Second - time.Since(lastSentAt)
+
+			if remaining > 0 {
+
+				return &dto.InitiateSignUpResponce{
+					TempID: string(existing.ID),
+					Message: fmt.Sprintf(
+						"OTP already sent. Please wait %d seconds before requesting again.",
+						int(remaining.Seconds()),
+					),
+				}, nil
+			}
+		}
+
+		return &dto.InitiateSignUpResponce{
+			TempID:  string(existing.ID),
+			Message: "OTP already sent. Use resend OTP.",
 		}, nil
 	}
 
@@ -585,7 +634,9 @@ func (s *AuthService) ForgotPasswordInitiate(ctx context.Context, req *dto.Forgo
 		return nil, err
 	}
 
-	resetID := entity.PasswordResetContextID(s.idGen.NewID(ctx))
+	resetID := entity.PasswordResetContextID(
+		s.idGen.NewID(ctx),
+	)
 
 	reset := &entity.PasswordResetContext{
 		ID:          resetID,
@@ -595,14 +646,34 @@ func (s *AuthService) ForgotPasswordInitiate(ctx context.Context, req *dto.Forgo
 		OTPVerified: false,
 	}
 
-	if err := s.passwordResetStore.Save(ctx, reset); err != nil {
+	if err := s.passwordResetStore.Save(
+		ctx,
+		reset,
+	); err != nil {
 		return nil, err
 	}
 
-	payload, _ := json.Marshal(map[string]string{
-		"email": user.Email.String(),
-		"otp":   otp,
-	})
+	if err := s.passwordResetStore.SetLastOTPSentAt(
+		ctx,
+		resetID,
+		time.Now(),
+	); err != nil {
+
+		log.Println(
+			"failed to set forgot password otp sent time:",
+			err,
+		)
+	}
+
+	payload, err := json.Marshal(
+		event.ForgotPasswordOTP{
+			Email: user.Email.String(),
+			OTP:   otp,
+		},
+	)
+	if err != nil {
+		return nil, err
+	}
 
 	tx, err := s.db.Begin(ctx)
 	if err != nil {
@@ -610,14 +681,18 @@ func (s *AuthService) ForgotPasswordInitiate(ctx context.Context, req *dto.Forgo
 	}
 	defer tx.Rollback(ctx)
 
-	outbox := &entity.OutboxEvent{
+	outboxEvent := &entity.OutboxEvent{
 		ID:        s.idGen.NewID(ctx),
-		EventType: "SendOTP",
+		EventType: platformEvents.EventForgotPasswordOTP,
 		Payload:   payload,
 		Status:    "pending",
 	}
 
-	if err := s.outboxRepo.Save(ctx, tx, outbox); err != nil {
+	if err := s.outboxRepo.Save(
+		ctx,
+		tx,
+		outboxEvent,
+	); err != nil {
 		return nil, err
 	}
 
@@ -783,7 +858,7 @@ func (s *AuthService) ResendForgotPasswordOTP(ctx context.Context, req *dto.Rese
 
 	outbox := &entity.OutboxEvent{
 		ID:        s.idGen.NewID(ctx),
-		EventType: "SendOTP",
+		EventType: platformEvents.EventSendOTP,
 		Payload:   payload,
 		Status:    "pending",
 	}

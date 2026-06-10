@@ -3,29 +3,26 @@ package kafka
 import (
 	"context"
 
-	"github.com/anfastk/mergespace/auth/internal/auth/adapter/outbound/kafka/mapper"
-	"github.com/anfastk/mergespace/auth/internal/auth/application/event"
-	"github.com/anfastk/mergespace/platform/domain"
+	platformKafka "github.com/anfastk/mergespace/platform/infrastructure/kafka"
 )
 
 type EventProducer struct {
-	producer domain.Producer
+	producer *platformKafka.Producer
 }
 
-func NewEventProducer(p domain.Producer) *EventProducer {
-	return &EventProducer{producer: p}
+func NewEventProducer(producer *platformKafka.Producer) *EventProducer {
+
+	return &EventProducer{
+		producer: producer,
+	}
 }
 
-func (e *EventProducer) PublishSendOTP(ctx context.Context, ev *event.SendOTP) error {
+func (p *EventProducer) Publish(ctx context.Context, eventName string, key []byte, payload any) error {
 
-	return e.producer.Publish(ctx, "auth.send_otp", []byte(ev.Email), mapper.ToSendOTPAvro(ev))
-}
-
-func (e *EventProducer) PublishUserCreated(ctx context.Context, ev *event.UserCreated) error {
-	return e.producer.Publish(
+	return p.producer.Publish(
 		ctx,
-		"user.created",
-		[]byte(ev.UserID),
-		ev,
+		eventName,
+		key,
+		payload,
 	)
 }

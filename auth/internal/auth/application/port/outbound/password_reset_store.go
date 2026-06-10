@@ -5,11 +5,13 @@ import (
 	"time"
 
 	"github.com/anfastk/mergespace/auth/internal/auth/domain/entity"
+	"github.com/anfastk/mergespace/auth/internal/auth/domain/valueobject"
 )
 
 type PasswordResetStore interface {
 	Save(ctx context.Context, reset *entity.PasswordResetContext) error
 	FindByID(ctx context.Context, id entity.PasswordResetContextID) (*entity.PasswordResetContext, error)
+	FindByEmail(ctx context.Context,email valueobject.Email) (*entity.PasswordResetContext, error)
 	Delete(ctx context.Context, id entity.PasswordResetContextID) error
 	Update(ctx context.Context, reset *entity.PasswordResetContext) error
 

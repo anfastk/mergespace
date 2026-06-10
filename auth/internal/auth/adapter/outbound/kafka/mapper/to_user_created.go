@@ -11,6 +11,5 @@ func ToUserCreatedAvro(e event.UserCreated) avro.UserCreatedAvro {
 		FirstName: e.FirstName,
 		LastName:  e.LastName,
 		Email:     e.Email,
-		Avatar:    e.Avatar,
 	}
 }
