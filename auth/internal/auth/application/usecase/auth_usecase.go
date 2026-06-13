@@ -292,6 +292,12 @@ func (s *AuthService) VerifySignup(ctx context.Context, req *dto.VerifySignupReq
 		}
 	}
 
+	log.Println(
+		"USER ID DEBUG:",
+		userID,
+		userID.String(),
+	)
+
 	lastname, err := valueobject.NewName(signupCtx.LastName)
 	if err != nil {
 		return nil, appErr.FieldError{
@@ -317,13 +323,15 @@ func (s *AuthService) VerifySignup(ctx context.Context, req *dto.VerifySignupReq
 		return nil, err
 	}
 
-	payload, err := json.Marshal(map[string]string{
-		"user_id":   userID.String(),
-		"firstName": firstname.String(),
-		"lastName":  lastname.String(),
-		"email":     email.String(),
-		"username":  username.String(),
-	})
+	payload, err := json.Marshal(
+		event.UserCreated{
+			UserID:    userID.String(),
+			Email:     email.String(),
+			Username:  username.String(),
+			FirstName: firstname.String(),
+			LastName:  lastname.String(),
+		},
+	)
 	if err != nil {
 		return nil, err
 	}

@@ -1,16 +1,14 @@
 package valueobject
 
-import (
-	"errors"
-)
+import "github.com/google/uuid"
 
 type UserID struct {
 	value string
 }
 
 func NewUserID(value string) (UserID, error) {
-	if value == "" {
-		return UserID{}, errors.New("empty id")
+	if _, err := uuid.Parse(value); err != nil {
+		return UserID{}, err
 	}
 	return UserID{value: value}, nil
 }
