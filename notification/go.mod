@@ -1,6 +1,6 @@
 module github.com/anfastk/mergespace/notification
 
-go 1.26.3
+go 1.26.4
 
 require (
 	github.com/anfastk/mergespace/platform v0.0.0-20260525150301-63a011067dae
