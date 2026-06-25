@@ -3,6 +3,9 @@ package main
 import (
 	"context"
 	"log"
+	"net/http"
+
+	profilev1connect "github.com/anfastk/mergespace/contracts/gen/go/proto/profile/v1/profilev1connect"
 
 	"github.com/anfastk/mergespace/profile/internal/profile/infrastructure/di"
 
@@ -36,12 +39,38 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println(
-		"profile service started",
+	go func() {
+
+		log.Println(
+			"profile kafka consumer started",
+		)
+
+		if err := consumer.Run(
+			context.Background(),
+		); err != nil {
+
+			log.Fatal(err)
+		}
+	}()
+
+	mux := http.NewServeMux()
+
+	path, handler := profilev1connect.NewProfileServiceHandler(
+		app.GrpcHandler,
 	)
 
-	if err := consumer.Run(
-		context.Background(),
+	mux.Handle(
+		path,
+		handler,
+	)
+
+	log.Println(
+		"profile grpc server started on :8082",
+	)
+
+	if err := http.ListenAndServe(
+		":8082",
+		mux,
 	); err != nil {
 
 		log.Fatal(err)

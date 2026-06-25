@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package profile.v1;
+
+option go_package = "github.com/anfastk/mergespace/contracts/gen/go/proto/profile/v1;profilev1";
+
+service ProfileService {
+  rpc UpdateProfile(UpdateProfileRequest) returns (UpdateProfileResponse);
+}
+
+message UpdateProfileRequest {
+string user_id = 1;
+optional string first_name = 2;
+optional string last_name = 3;
+optional string bio = 4;
+optional string avatar_url = 5;
+}
+
+message UpdateProfileResponse {
+string message = 1;
+}

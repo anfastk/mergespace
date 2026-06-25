@@ -1,6 +1,8 @@
 package di
 
 import (
+	inboundGrpc "github.com/anfastk/mergespace/profile/internal/profile/adapter/inbound/grpc/handler"
+
 	inboundKafka "github.com/anfastk/mergespace/profile/internal/profile/adapter/inbound/kafka"
 
 	"github.com/anfastk/mergespace/profile/internal/profile/adapter/outbound/postgres"
@@ -13,7 +15,10 @@ import (
 
 type App struct {
 	ConsumerHandler *inboundKafka.ConsumerHandler
-	Config          *config.Config
+
+	GrpcHandler *inboundGrpc.ProfileHandler
+
+	Config *config.Config
 }
 
 func BuildApp() *App {
@@ -35,13 +40,17 @@ func BuildApp() *App {
 		repo,
 	)
 
-	handler := inboundKafka.NewConsumerHandler(
+	kafkaHandler := inboundKafka.NewConsumerHandler(
+		profileUseCase,
+	)
+
+	grpcHandler := inboundGrpc.NewProfileHandler(
 		profileUseCase,
 	)
 
 	return &App{
-		ConsumerHandler: handler,
+		ConsumerHandler: kafkaHandler,
+		GrpcHandler:     grpcHandler,
 		Config:          cfg,
 	}
-
 }

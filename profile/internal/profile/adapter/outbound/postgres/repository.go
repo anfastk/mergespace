@@ -2,7 +2,10 @@ package postgres
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
+	"github.com/anfastk/mergespace/profile/internal/profile/application/dto"
 	"github.com/anfastk/mergespace/profile/internal/profile/domain/entity"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -54,3 +57,61 @@ VALUES (
 	)
 	return err
 }
+
+func (r *Repository) UpdateProfile(
+	ctx context.Context,
+	req *dto.UpdateProfileRequest,
+) error {
+	sets := []string{}
+	args := []any{}
+	argPos := 1
+
+	add := func(column string, value *string) {
+		if value == nil {
+			return
+		}
+
+		sets = append(
+			sets,
+			fmt.Sprintf("%s = $%d", column, argPos),
+		)
+
+		args = append(args, *value)
+		argPos++
+	}
+
+	add("first_name", req.FirstName)
+	add("last_name", req.LastName)
+	add("bio", req.Bio)
+	add("avatar_url", req.AvatarURL)
+
+	sets = append(sets, "updated_at = NOW()")
+
+	query := fmt.Sprintf(`
+UPDATE profiles
+SET %s
+WHERE user_id = $%d
+`,
+		strings.Join(sets, ", "),
+		argPos,
+	)
+
+	args = append(args, req.UserID)
+
+	result, err := r.db.Exec(
+		ctx,
+		query,
+		args...,
+	)
+	if err != nil {
+		return err
+	}
+
+	if result.RowsAffected() == 0 {
+		return fmt.Errorf(
+			"profile not found",
+		)
+	}
+
+	return nil
+}	
