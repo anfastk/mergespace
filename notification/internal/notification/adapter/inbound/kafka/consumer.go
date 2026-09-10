@@ -59,7 +59,7 @@ func (h *ConsumerHandler) Handle(ctx context.Context, event platform.Envelope) e
 			"SENDING OTP EMAIL TO:",
 			payload.Email,
 		)
-
+		log.Printf("📧 MOCK EMAIL: To: %s | OTP: %s", payload.Email, payload.OTP)
 		return h.usecase.HandleSendOTP(
 			ctx,
 			&payload,
@@ -121,7 +121,7 @@ func (h *ConsumerHandler) Handle(ctx context.Context, event platform.Envelope) e
 
 		log.Println(
 			"SENDING FORGOT PASSWORD OTP EMAIL TO:",
-			payload.Email,
+			payload.Email,payload.OTP,
 		)
 
 		return h.usecase.HandleForgotPasswordOTP(

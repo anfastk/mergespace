@@ -3,9 +3,11 @@ module github.com/anfastk/mergespace/profile
 go 1.26.4
 
 require (
+	connectrpc.com/connect v1.20.0
 	github.com/anfastk/mergespace/platform v0.0.0-20260610092712-34a4cfe18a62
 	github.com/google/uuid v1.6.0
 	github.com/jackc/pgx/v5 v5.10.0
+	github.com/joho/godotenv v1.5.1
 )
 
 require (
@@ -25,6 +27,8 @@ require (
 	github.com/santhosh-tekuri/jsonschema/v5 v5.0.0 // indirect
 	github.com/twmb/franz-go v1.20.6 // indirect
 	github.com/twmb/franz-go/pkg/kmsg v1.12.0 // indirect
-	golang.org/x/sync v0.19.0 // indirect
-	golang.org/x/text v0.29.0 // indirect
+	golang.org/x/crypto v0.52.0 // indirect
+	golang.org/x/sync v0.20.0 // indirect
+	golang.org/x/text v0.37.0 // indirect
+	google.golang.org/protobuf v1.36.11 // indirect
 )

@@ -37,7 +37,7 @@ func Load() (*Config, error) {
 			DB:       getEnvInt("REDIS_DB", 0),
 		},
 		Kafka: KafkaConfig{
-			Brokers:           strings.Split(getEnv("KAFKA_BROKERS", "localhost:29092"), ","),
+			Brokers:           strings.Split(getEnv("KAFKA_BROKERS", "127.0.0.1:29092"), ","),
 			SchemaRegistryURL: getEnv("SCHEMA_REGISTRY_URL", "http://localhost:8081"),
 			UserSignupTopic:   getEnv("TOPIC_USER_AUTH", "auth-events"),
 		},
