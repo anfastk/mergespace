@@ -36,7 +36,7 @@ func main() {
 		app.ConsumerHandler.Handle,
 	)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(err)	
 	}
 
 	go func() {

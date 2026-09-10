@@ -3,7 +3,8 @@ go 1.26.4
 use (
 	./auth
 	./contracts
-	./platform
+	./gateway
 	./notification
+	./platform
 	./profile
 )
